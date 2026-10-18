@@ -43,3 +43,5 @@ next-env.d.ts
 # agente local
 /agent/.cache/
 /agent/logs/
+
+!.env.example

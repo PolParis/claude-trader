@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
+// Web privada y 100 % dinámica (cada petición lee la sesión del usuario), así que no se usa
+// Cache Components / Partial Prefetching.
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
   turbopack: {
     rules: {
       "*.css": {
