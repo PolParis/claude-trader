@@ -68,8 +68,9 @@ async function main() {
 
   // Inicio automático solo para experimentos de prueba; el oficial se inicia a mano.
   if (db && !exp.startedAt) {
-    if (exp.mode !== "test" || dryRun) throw new Error(`El experimento ${exp.code} no ha empezado. Usa: npm run start-experiment -- --code ${exp.code}`);
-    await startExperiment(db, exp, provider, now, log);
+    if (dryRun) log(`El experimento ${exp.code} no ha empezado: la prueba usa la cartera inicial.`);
+    else if (exp.mode !== "test") throw new Error(`El experimento ${exp.code} no ha empezado. Usa: npm run start-experiment -- --code ${exp.code}`);
+    else await startExperiment(db, exp, provider, now, log);
   }
 
   // Reserva de la franja (UNIQUE en BD): si ya existe, otro proceso/PC ya la hizo.

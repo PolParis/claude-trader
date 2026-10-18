@@ -75,15 +75,14 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - [x] 3. Agente `claude -p` — prueba offline real OK (16 k caracteres de prompt, ~15 s, JSON válido)
 - [x] 4. Dashboard — 7 páginas + login + CSV; build y lint OK
 - [x] 5. Benchmarks y métricas — compra día 1, cierre diario, dividendos/splits, Sharpe, DD...
-- [~] 6. Hash chain y duplicados hechos; falta: repo GitHub + secretos + proyecto Vercel
-- [~] 7. Scripts listos (`scripts/windows/install-tasks.ps1`); falta instalarlos
+- [~] 6. Hash chain, duplicados, repo GitHub (PolParis/claude-trader) y secretos OK; falta: proyecto Vercel (el conector MCP da 403 → importar a mano)
+- [x] 7. Tareas `ClaudeTrader-S1/S2` instaladas en el PC principal (PcPol)
 - [ ] 8. Periodo de prueba (experimento `test-1`) → fecha oficial
 
 ## Pendientes del usuario (manuales)
-- Pegar `SUPABASE_SECRET_KEY` en `.env.local` (en cada PC).
-- Desactivar registros en Supabase Auth.
-- Crear repo público `PolParis/claude-trader` vacío y dar acceso a la app de Vercel en GitHub.
-- Secretos de GitHub Actions: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`.
+- Importar el repo en Vercel con las variables de entorno (ver README/conversación).
+- En el segundo PC: clonar el repo, `npm install` y copiar `.env.local` (NO instalar tareas).
+- Usuario web creado: polparis7@gmail.com.
 
 ## Decisiones / notas
 - Rama principal `main`. Repo público (GitHub Actions gratis + transparencia).
