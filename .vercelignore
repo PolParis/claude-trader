@@ -1,5 +1,5 @@
-agent/
-scripts/
-integrity/
-supabase/
-.github/
+/agent/
+/scripts/
+/integrity/
+/supabase/
+/.github/
