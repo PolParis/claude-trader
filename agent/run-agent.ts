@@ -39,6 +39,10 @@ const opt = (name: string) => {
 
 const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`);
 const SLOT_LABELS: Record<string, string> = { S1: "programada 16:30", S2: "programada 21:00" };
+// Ventana válida (minutos del día, hora de Madrid) de cada franja programada. Si Windows lanza la
+// tarea tarde (PC dormido sin enchufar y despertado después), fuera de la ventana no se hace nada:
+// el cierre diario la marcará como no realizada en vez de ocupar la franja de otro día.
+const SLOT_WINDOWS: Record<string, [number, number]> = { S1: [16 * 60 + 25, 18 * 60], S2: [20 * 60 + 55, 22 * 60] };
 const TRADING_MARKETS: MarketId[] = ["US", "XETRA", "EURONEXT", "BME"];
 
 async function main() {
@@ -63,6 +67,13 @@ async function main() {
   }
   const model = opt("model") ?? exp.model;
   log(`Experimento ${exp.code} · franja ${slot} (${kind}) · equipo ${hostname} · modelo ${model}${dryRun ? " · SIN ESCRITURA" : ""}`);
+
+  const slotWindow = SLOT_WINDOWS[slot];
+  const minuteOfDay = p.hour * 60 + p.minute;
+  if (slotWindow && !flag("force") && (minuteOfDay < slotWindow[0] || minuteOfDay > slotWindow[1])) {
+    log(`Fuera de la ventana de la franja ${slot} (${String(p.hour).padStart(2, "0")}:${String(p.minute).padStart(2, "0")} en Madrid): probablemente el PC estaba dormido. No se hace nada.`);
+    return;
+  }
 
   const anyOpen = TRADING_MARKETS.some((m) => isMarketOpen(m, now));
 

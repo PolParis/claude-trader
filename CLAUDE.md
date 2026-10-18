@@ -75,12 +75,11 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - [x] 3. Agente `claude -p` — prueba offline real OK (16 k caracteres de prompt, ~15 s, JSON válido)
 - [x] 4. Dashboard — 7 páginas + login + CSV; build y lint OK
 - [x] 5. Benchmarks y métricas — compra día 1, cierre diario, dividendos/splits, Sharpe, DD...
-- [~] 6. Hash chain, duplicados, repo GitHub (PolParis/claude-trader) y secretos OK; falta: proyecto Vercel (el conector MCP da 403 → importar a mano)
+- [x] 6. Hash chain, duplicados, repo GitHub (PolParis/claude-trader), secretos y web en Vercel
 - [x] 7. Tareas `ClaudeTrader-S1/S2` instaladas en el PC principal (PcPol)
 - [ ] 8. Periodo de prueba (experimento `test-1`) → fecha oficial
 
 ## Pendientes del usuario (manuales)
-- Importar el repo en Vercel con las variables de entorno (ver README/conversación).
 - En el segundo PC: clonar el repo, `npm install` y copiar `.env.local` (NO instalar tareas).
 - Usuario web creado: polparis7@gmail.com.
 
@@ -100,5 +99,7 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - Claude se llama con `--tools "" --strict-mcp-config --safe-mode --no-session-persistence --json-schema`
   desde una carpeta temporal vacía. Un único reintento solo si el JSON es inválido y antes de escribir nada.
 - Ejecución: precios refrescados justo antes de ejecutar (no los del prompt).
+- Franjas programadas con ventana (S1 16:25–18:00, S2 20:55–22:00): si Windows lanza la tarea tarde
+  (PC dormido en batería, sin temporizadores de activación) no hace nada y el cierre la marca fallida.
 - Anclas de integridad: solo las escribe GitHub Actions (`integrity/anchors.jsonl`); la página Integridad
   las compara con la BD.
