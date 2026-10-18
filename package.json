@@ -12,7 +12,8 @@
     "run-agent": "tsx --env-file-if-exists=.env.local agent/run-agent.ts",
     "close-day": "tsx --env-file-if-exists=.env.local agent/close-day.ts",
     "start-experiment": "tsx --env-file-if-exists=.env.local agent/start-experiment.ts",
-    "create-user": "tsx --env-file-if-exists=.env.local agent/create-user.ts"
+    "create-user": "tsx --env-file-if-exists=.env.local agent/create-user.ts",
+    "market-check": "tsx --env-file-if-exists=.env.local agent/market-check.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
