@@ -1,0 +1,86 @@
+@AGENTS.md
+
+# Claude vs. el Mercado — simulador de inversión con dinero ficticio
+
+Experimento: Claude gestiona una cartera de **10.000 € FICTICIOS** sobre precios reales del mercado.
+Paper trading puro: **ningún bróker ni dinero real**. No es consejo financiero; el autor no replica las decisiones.
+
+El usuario es estudiante de ingeniería y empieza de cero: explicar cada paso brevemente, dar comandos
+listos para copiar en un solo bloque (PowerShell) y guías paso a paso para Supabase/Vercel/GitHub.
+Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del proyecto. Idioma: español.
+
+## Reglas no negociables
+- Coste 0 €: prohibida la API de Anthropic y cualquier servicio de pago. Solo Vercel Hobby, Supabase Free,
+  GitHub (repo público, Actions) y datos gratuitos. **No usar Vercel Cron.**
+- Claude decide con `claude -p` (suscripción Pro del usuario) desde un script local. En esa llamada Claude
+  no tiene herramientas, ni MCP, ni red, ni acceso a la BD: solo el prompt → JSON.
+- El motor de ejecución es código determinista (`src/core`), separado de Claude.
+- Diario, órdenes, ejecuciones, eventos, snapshots, benchmarks: **append-only** (triggers + REVOKE) y con
+  **hash encadenado** (trigger en BD, verificación independiente en TS).
+- La clave secreta de Supabase solo en `.env.local` (local) y en secretos de GitHub Actions. Nunca en el
+  frontend ni en el repo.
+
+## Reglas del experimento (por defecto, configurables en la tabla `experiments`)
+- Capital 10.000 €, divisa base EUR. Activos solo en **EUR o USD** (FX real EURUSD=X registrado en cada operación).
+- Comisión 0,10 % (mín. 1 €), slippage 0,05 %, comisión de cambio 0 %. Sin apalancamiento, corto, derivados ni margen.
+- Máx. 25 % de la cartera por activo (se comprueba al comprar; no se fuerza venta si sube por precio).
+- Unidades enteras. Cripto desactivada.
+- Mercados: EE. UU. (NYSE/Nasdaq/Arca/Cboe), Xetra, Euronext (París, Ámsterdam, Bruselas, Lisboa), BME.
+  Exposición a China/India/LatAm/emergentes vía ADRs y ETFs cotizados en USD o EUR.
+- Orden abierto + festivos: calendario propio (`src/core/calendar.ts`) **y** `marketState === REGULAR` de Yahoo.
+- Órdenes: primero ventas, luego compras. Market → precio actual ± slippage. Limit → "como una persona normal":
+  orden válida durante la sesión del día; si es ejecutable se ejecuta al momento, si no queda pendiente
+  (reserva efectivo/acciones) y se comprueba con barras de 5 min en la siguiente ejecución o en el cierre;
+  si el precio tocó el límite se ejecuta al precio límite, si no caduca al cierre del mercado.
+- Claude solo puede operar tickers cuyos datos van en el prompt de esa ejecución (si no → rechazo).
+- Dividendos en bruto (impuestos ignorados) y splits aplicados. Benchmarks: ETFs de acumulación.
+- Sharpe con tipo libre de riesgo configurable (0 % por defecto).
+
+## Arquitectura
+- `src/core/` lógica pura y testeada (Vitest): calendario, comisiones, FX, motor, órdenes limitadas,
+  cartera derivada del registro, benchmarks, métricas, hash canónico. La usan la web, el agente y el cierre.
+- `src/app/` dashboard Next.js (App Router) — solo LEE de Supabase con la clave publicable + login.
+- `agent/` scripts locales (NO se despliegan, ver `.vercelignore`): `run-agent`, `close-day`,
+  `start-experiment`, `create-user`. Datos de mercado en `agent/lib/market/` (interfaz `MarketDataProvider`).
+- `supabase/migrations/` SQL versionado (se aplica con el MCP de Supabase).
+- `.github/workflows/close-day.yml` → snapshot de cierre diario (sin Claude) + caducidad de límites +
+  dividendos/splits + ancla de hashes en `integrity/anchors.jsonl`.
+
+## Infraestructura
+- Supabase: proyecto `claude-trader`, ref `exbawucbremmdnoyupho`, región eu-central-1 (Frankfurt), org free.
+- Datos: yahoo-finance2 (gratis, sin clave, no oficial). Retraso declarado por Yahoo: 15 min Xetra/BME/Nasdaq
+  (campo `exchangeDataDelayedBy`), 0 Euronext Ámsterdam, 20 NYSE; se registra el retraso medido
+  (fetched_at − regularMarketTime) en cada precio.
+- Claude CLI: `%APPDATA%\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe` (variable `CLAUDE_BIN` para cambiarlo).
+- Modelo del agente: `sonnet` (plan Pro); configurable en `experiments.agent_model`.
+- Tareas programadas solo en el PC principal (16:30 y 21:00 Madrid, L-V).
+
+## Variables de entorno (`.env.local`, ignorado por git)
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+SUPABASE_SECRET_KEY=...          # solo scripts locales y GitHub Actions
+EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
+```
+
+## Comandos
+- `npm run dev` / `npm run build` / `npm test`
+- `npm run run-agent -- --slot S1|S2` (sin `--slot` = ejecución manual)
+- `npm run close-day`, `npm run start-experiment -- --code <code>`, `npm run create-user -- <email>`
+
+## Estado de fases
+- [ ] 0. Preparación
+- [ ] 1. BD + motor con tests
+- [ ] 2. Datos de mercado
+- [ ] 3. Agente `claude -p` manual
+- [ ] 4. Dashboard
+- [ ] 5. Benchmarks y métricas
+- [ ] 6. Hash chain, duplicados, despliegue
+- [ ] 7. Tareas programadas Windows
+- [ ] 8. Periodo de prueba → fecha oficial
+
+## Pendientes del usuario (manuales)
+(se rellena en cada fase)
+
+## Decisiones / notas
+- Rama principal `main`.
