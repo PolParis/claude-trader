@@ -4,7 +4,7 @@
 //  2. Revisa/caduca órdenes limitadas pendientes.
 //  3. Registra dividendos y splits de las posiciones.
 //  4. Guarda el snapshot de cierre (cartera + benchmarks).
-//  5. Añade los hashes de cabeza de cada cadena a integrity/anchors.jsonl (el workflow lo commitea).
+//  5. En GitHub Actions, añade los hashes de cabeza de cada cadena a integrity/anchors.jsonl.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -143,7 +143,8 @@ async function main() {
   const hostname = process.env.GITHUB_ACTIONS ? "github-actions" : os.hostname();
   const experiments = await listStartedExperiments(db);
   for (const exp of experiments) await closeExperiment(db, exp, now, hostname);
-  if (!process.argv.includes("--no-anchor")) await anchor(db, experiments, now);
+  // Las anclas solo se escriben desde GitHub Actions (que las commitea); en local, con --anchor.
+  if (process.env.GITHUB_ACTIONS || process.argv.includes("--anchor")) await anchor(db, experiments, now);
 }
 
 main().catch((e) => {

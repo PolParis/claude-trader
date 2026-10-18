@@ -68,19 +68,34 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - `npm run run-agent -- --slot S1|S2` (sin `--slot` = ejecución manual)
 - `npm run close-day`, `npm run start-experiment -- --code <code>`, `npm run create-user -- <email>`
 
-## Estado de fases
-- [ ] 0. Preparación
-- [ ] 1. BD + motor con tests
-- [ ] 2. Datos de mercado
-- [ ] 3. Agente `claude -p` manual
-- [ ] 4. Dashboard
-- [ ] 5. Benchmarks y métricas
-- [ ] 6. Hash chain, duplicados, despliegue
-- [ ] 7. Tareas programadas Windows
-- [ ] 8. Periodo de prueba → fecha oficial
+## Estado de fases (actualizado 2026-10-18)
+- [x] 0. Preparación — proyecto Supabase creado, Next.js 16 + Tailwind 4, `.env.local`
+- [x] 1. BD + motor con tests — migraciones aplicadas; hash de la BD == hash de Node verificado
+- [x] 2. Datos de mercado — Yahoo: 107/107 activos del universo OK (`npm run market-check`)
+- [x] 3. Agente `claude -p` — prueba offline real OK (16 k caracteres de prompt, ~15 s, JSON válido)
+- [x] 4. Dashboard — 7 páginas + login + CSV; build y lint OK
+- [x] 5. Benchmarks y métricas — compra día 1, cierre diario, dividendos/splits, Sharpe, DD...
+- [~] 6. Hash chain y duplicados hechos; falta: repo GitHub + secretos + proyecto Vercel
+- [~] 7. Scripts listos (`scripts/windows/install-tasks.ps1`); falta instalarlos
+- [ ] 8. Periodo de prueba (experimento `test-1`) → fecha oficial
 
 ## Pendientes del usuario (manuales)
-(se rellena en cada fase)
+- Pegar `SUPABASE_SECRET_KEY` en `.env.local` (en cada PC).
+- Desactivar registros en Supabase Auth.
+- Crear repo público `PolParis/claude-trader` vacío y dar acceso a la app de Vercel en GitHub.
+- Secretos de GitHub Actions: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`.
 
 ## Decisiones / notas
-- Rama principal `main`.
+- Rama principal `main`. Repo público (GitHub Actions gratis + transparencia).
+- `cacheComponents` desactivado en `next.config.ts`: la web es privada y dinámica (sesión en cada petición).
+- `package.json` con `"type": "module"` (los scripts usan top-level await con tsx).
+- PowerShell 5.1 estropea UTF-8 al editar con Get/Set-Content: editar archivos con las herramientas de
+  archivo o bash; los `.ps1` solo en ASCII.
+- Experimentos: `test-1` (prueba, arranca solo en la primera ejecución con Europa abierta) y el oficial
+  (se crea y arranca con `npm run start-experiment -- --code oficial --create --name "..."`).
+- La web muestra el experimento con `is_default` (o el elegido en el selector, cookie `exp`).
+- Claude se llama con `--tools "" --strict-mcp-config --safe-mode --no-session-persistence --json-schema`
+  desde una carpeta temporal vacía. Un único reintento solo si el JSON es inválido y antes de escribir nada.
+- Ejecución: precios refrescados justo antes de ejecutar (no los del prompt).
+- Anclas de integridad: solo las escribe GitHub Actions (`integrity/anchors.jsonl`); la página Integridad
+  las compara con la BD.
