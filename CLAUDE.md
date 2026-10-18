@@ -85,6 +85,10 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - Usuario web creado: polparis7@gmail.com.
 
 ## Decisiones / notas
+- Mandato del usuario (2026-10-18): Claude debe buscar acciones individuales de todo el mundo (China,
+  emergentes...), no solo índices de EU/EE. UU. → regla 9 del system prompt + universo de 160 activos
+  (ADRs en USD). Descartados: TCEHY (OTC), EBR (sin datos), SIFY (ilíquida).
+- Web: https://claude-trader-livid.vercel.app (despliegue automático al hacer push a main).
 - Rama principal `main`. Repo público (GitHub Actions gratis + transparencia).
 - `cacheComponents` desactivado en `next.config.ts`: la web es privada y dinámica (sesión en cada petición).
 - `package.json` con `"type": "module"` (los scripts usan top-level await con tsx).

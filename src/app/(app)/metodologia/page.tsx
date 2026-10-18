@@ -60,6 +60,11 @@ export default async function MetodologiaPage() {
           se consigue con ADRs y ETFs de país cotizados en EE. UU. o Xetra. Hay un universo base de {BASE_UNIVERSE.length} activos ({regions.join(", ")}) y Claude puede
           añadir hasta {MAX_WATCHLIST_EXTRA} más a su lista de seguimiento, siempre que cumplan bolsa y divisa permitidas.
         </p>
+        <p className="mt-2">
+          <strong className="text-ink">Mandato del autor:</strong> se le pide a Claude que no se limite a fondos indexados de Europa y EE. UU. y que busque
+          oportunidades en acciones individuales de todo el mundo (China, India, Latinoamérica, Asia, Israel, Sudáfrica…), diversificando y justificando cada
+          elección con los datos. Esto puede hacer que la cartera sea más arriesgada que los benchmarks.
+        </p>
       </Section>
 
       <Section title="Benchmarks">
