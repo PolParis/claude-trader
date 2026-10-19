@@ -12,6 +12,7 @@ const TABLES: { table: string; label: string }[] = [
   { table: "watchlist_events", label: "Watchlist" },
   { table: "benchmarks", label: "Compra de benchmarks" },
   { table: "snapshots", label: "Valoraciones" },
+  { table: "explanations", label: "Explicaciones" },
 ];
 
 interface Anchor {

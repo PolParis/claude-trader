@@ -66,7 +66,7 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 ## Comandos
 - `npm run dev` / `npm run build` / `npm test`
 - `npm run run-agent -- --slot S1|S2` (sin `--slot` = ejecución manual)
-- `npm run close-day`, `npm run start-experiment -- --code <code>`, `npm run create-user -- <email>`
+- `npm run explain` (genera las explicaciones que falten), `npm run close-day`, `npm run start-experiment -- --code <code>`, `npm run create-user -- <email>`
 
 ## Estado de fases (actualizado 2026-10-18)
 - [x] 0. Preparación — proyecto Supabase creado, Next.js 16 + Tailwind 4, `.env.local`
@@ -87,6 +87,10 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - Mandato del usuario (2026-10-18): Claude debe buscar acciones individuales de todo el mundo (China,
   emergentes...), no solo índices de EU/EE. UU. → regla 9 del system prompt + universo de 160 activos
   (ADRs en USD). Descartados: TCEHY (OTC), EBR (sin datos), SIFY (ilíquida).
+- Explicaciones para principiantes (2026-10-19, petición del usuario: no sabe de inversión): tras cada
+  ejecución, 2.ª llamada `claude -p` (`agent/lib/agent/explain.ts`) → tabla encadenada `explanations`
+  (1 por run) → página `/explicaciones` (historia, reparto por país/tipo, glosario). Si falla, no afecta a
+  las órdenes; se rellena con `npm run explain`.
 - Web: https://claude-trader-livid.vercel.app (despliegue automático al hacer push a main).
 - Rama principal `main`. Repo público (GitHub Actions gratis + transparencia).
 - `cacheComponents` desactivado en `next.config.ts`: la web es privada y dinámica (sesión en cada petición).

@@ -38,6 +38,11 @@ export default async function MetodologiaPage() {
           llamada falla (límite de uso, error o el ordenador apagado), se registra como ejecución fallida y no se reintenta de forma que pueda duplicar órdenes: cada
           franja horaria se reserva una sola vez en la base de datos (restricción UNIQUE) junto con el equipo que la lanzó.
         </p>
+        <p className="mt-2">
+          Después de ejecutar las órdenes, una segunda llamada a Claude (también sin herramientas) redacta una <strong className="text-ink">explicación para
+          principiantes</strong> de lo que ha hecho y de lo que el sistema le ha rechazado. Esa explicación no influye en ninguna orden y se guarda en el mismo
+          registro append-only con hash encadenado.
+        </p>
       </Section>
 
       <Section title="Reglas de ejecución">

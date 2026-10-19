@@ -17,7 +17,7 @@ import { defaultProvider } from "./lib/market/yahoo";
 import { FX_SYMBOL, fxFromQuotes, loadState, quoteRows, resolvePendingOrders, writeSnapshot } from "./lib/ops";
 import { BENCHMARKS } from "@/core/benchmarks";
 
-const CHAINED = ["journal_entries", "orders", "fills", "order_events", "corporate_actions", "watchlist_events", "benchmarks", "snapshots"];
+const CHAINED = ["journal_entries", "orders", "fills", "order_events", "corporate_actions", "watchlist_events", "benchmarks", "snapshots", "explanations"];
 const TRADING: MarketId[] = ["US", "XETRA", "EURONEXT", "BME"];
 const log = (m: string) => console.log(`[${new Date().toISOString()}] ${m}`);
 

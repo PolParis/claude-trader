@@ -10,6 +10,7 @@ import { avgPriceLocal, derivePortfolio, valuePortfolio } from "@/core/portfolio
 import { DEFAULT_CONFIG, type Currency, type Instrument, type MarketId, type OrderRequest } from "@/core/types";
 import { MAX_WATCHLIST_EXTRA } from "@/core/universe";
 import { callClaude } from "./lib/agent/claude";
+import { explainRun } from "./lib/agent/explain";
 import { buildPrompt, systemPrompt } from "./lib/agent/prompt";
 import { decisionJsonSchema, parseDecision, type Decision } from "./lib/agent/schema";
 import {
@@ -402,6 +403,14 @@ async function runBody(ctx: {
   };
   await finishRun(db!, runId!, "completed", { ...runMeta, summary, duration_ms: Date.now() - ctx.t0 });
   log(`Ejecución completada: ${JSON.stringify(summary)}`);
+
+  // 10. Explicación para principiantes (aparte: si falla no afecta a lo ya ejecutado y
+  // se puede generar después con `npm run explain`).
+  try {
+    await explainRun({ db: db!, exp, runId: runId!, benchmarkNames: Object.fromEntries(BENCHMARKS.map((b) => [b.code, b.name])), log });
+  } catch (e) {
+    log(`No se pudo generar la explicación (se puede repetir con npm run explain): ${(e as Error).message}`);
+  }
 }
 
 main().catch((e) => {
