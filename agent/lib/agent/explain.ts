@@ -2,6 +2,7 @@
 // traduce la decisión (y lo que de verdad ocurrió con cada orden) a lenguaje sencillo.
 // No influye en las órdenes: si falla, se registra en el log y la ejecución sigue siendo válida.
 import { z } from "zod";
+import { BASICS } from "@/lib/glossary";
 import { insertChained, type Db, type Experiment } from "../db";
 import { callClaude } from "./claude";
 
@@ -42,7 +43,7 @@ Reglas:
 3. Explica también lo que NO salió como Claude quería (órdenes rechazadas y su motivo) y por qué el sistema lo impidió.
 4. Sé honesto: no prometas ganancias ni digas que una decisión es buena o mala con certeza. Es un experimento.
 5. "operations": una entrada por cada activo comprado o vendido de verdad (no las rechazadas).
-6. "concepts": de 0 a 4 conceptos NUEVOS que aparezcan hoy; no repitas los de la lista "ya explicados".
+6. "concepts": de 0 a 4 conceptos NUEVOS que aparezcan hoy (indicadores, tipos de activo, términos del diario, reglas del experimento...); no repitas los de la lista "ya explicados". Explícalos con un ejemplo sencillo, a poder ser con cifras de hoy. Son para un glosario que el estudiante irá ampliando con el tiempo.
 7. Usa ejemplos y comparaciones cotidianas cuando ayuden. Tutea al lector.
 8. Responde solo con el JSON del esquema.`;
 
@@ -140,7 +141,7 @@ export async function explainRun(args: { db: Db; exp: Experiment; runId: string;
     snapshot,
     benchmarkNames: args.benchmarkNames,
     previous: previousAll.slice(-6),
-    knownConcepts: [...new Set(previousAll.flatMap((p) => ((p.concepts ?? []) as Row[]).map((c) => String(c.term))))],
+    knownConcepts: [...new Set([...BASICS.map((b) => b.term), ...previousAll.flatMap((p) => ((p.concepts ?? []) as Row[]).map((c) => String(c.term)))])],
   });
   const schema = z.toJSONSchema(ExplanationSchema, { target: "draft-7" }) as Record<string, unknown>;
   delete schema.$schema;
