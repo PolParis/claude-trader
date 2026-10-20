@@ -2,11 +2,9 @@
 # ejecuciones no realizadas y anclas de integridad. Gratis en repos publicos.
 name: Cierre diario
 
+# El cierre diario se hace en el PC principal (tarea ClaudeTrader-CLOSE, 22:30). Este workflow
+# queda solo para lanzarlo a mano desde GitHub si hiciera falta (Actions > Run workflow).
 on:
-  schedule:
-    # 21:40 UTC de lunes a viernes = 22:40 (invierno) / 23:40 (verano) en Madrid,
-    # siempre despues del cierre de EE. UU. GitHub puede retrasarlo unos minutos.
-    - cron: "40 21 * * 1-5"
   workflow_dispatch:
 
 permissions:

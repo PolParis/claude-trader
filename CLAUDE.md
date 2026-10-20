@@ -43,7 +43,7 @@ Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del pr
 - `agent/` scripts locales (NO se despliegan, ver `.vercelignore`): `run-agent`, `close-day`,
   `start-experiment`, `create-user`. Datos de mercado en `agent/lib/market/` (interfaz `MarketDataProvider`).
 - `supabase/migrations/` SQL versionado (se aplica con el MCP de Supabase).
-- `.github/workflows/close-day.yml` → snapshot de cierre diario (sin Claude) + caducidad de límites +
+- `.github/workflows/close-day.yml` (solo manual; el cierre normal es la tarea CLOSE del PC) → snapshot de cierre diario (sin Claude) + caducidad de límites +
   dividendos/splits + ancla de hashes en `integrity/anchors.jsonl`.
 
 ## Infraestructura
@@ -53,7 +53,9 @@ Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del pr
   (fetched_at − regularMarketTime) en cada precio.
 - Claude CLI: `%APPDATA%\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe` (variable `CLAUDE_BIN` para cambiarlo).
 - Modelo del agente: `sonnet` (plan Pro); configurable en `experiments.agent_model`.
-- Tareas programadas solo en el PC principal (16:30 y 21:00 Madrid, L-V).
+- Tareas programadas solo en el PC principal (L-V, hora de Madrid): S1 16:30, S2 21:00 y CLOSE 22:30
+  (cierre diario, `npm run close-day`). Decisión del usuario (2026-10-20): el cierre ya no va en GitHub
+  Actions (el workflow queda solo manual); sin anclas de integridad automáticas.
 
 ## Variables de entorno (`.env.local`, ignorado por git)
 ```
