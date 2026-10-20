@@ -105,5 +105,8 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
 - Ejecución: precios refrescados justo antes de ejecutar (no los del prompt).
 - Franjas programadas con ventana (S1 16:25–18:00, S2 20:55–22:00): si Windows lanza la tarea tarde
   (PC dormido en batería, sin temporizadores de activación) no hace nada y el cierre la marca fallida.
+- Cierre diario: GitHub puede lanzar el cron con horas de retraso → antes de las 09:00 de Madrid se cierra
+  el día anterior (`closingDay` en close-day.ts). 19/10: el cierre de GitHub falló (paso "Comprobar
+  secretos" añadido para diagnosticar); el del 20/10 se hizo a mano desde PcPol.
 - Anclas de integridad: solo las escribe GitHub Actions (`integrity/anchors.jsonl`); la página Integridad
   las compara con la BD.

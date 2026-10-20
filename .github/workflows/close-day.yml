@@ -27,6 +27,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Comprobar secretos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          ok=1
+          [ -n "$SUPABASE_URL" ] && echo "SUPABASE_URL: definido" || { echo "::error::Falta el secreto SUPABASE_URL"; ok=0; }
+          [ -n "$SUPABASE_SECRET_KEY" ] && echo "SUPABASE_SECRET_KEY: definido" || { echo "::error::Falta el secreto SUPABASE_SECRET_KEY"; ok=0; }
+          case "$SUPABASE_URL" in https://*.supabase.co*) ;; *) echo "::error::SUPABASE_URL debe ser https://xxxx.supabase.co"; ok=0;; esac
+          [ $ok = 1 ]
       - name: Cierre del dia
         run: npx tsx agent/close-day.ts
         env:

@@ -148,6 +148,7 @@ export async function writeSnapshot(args: {
   kind: "start" | "run" | "close";
   runId: string | null;
   now: Date;
+  snapshotDate?: string;
 }) {
   const prices = new Map([...args.quotes].map(([s, q]) => [s, q.price]));
   const fxRates: Partial<Record<Currency, number>> = { USD: args.fx.USD?.rate };
@@ -157,7 +158,7 @@ export async function writeSnapshot(args: {
     run_id: args.runId,
     kind: args.kind,
     at: args.now,
-    snapshot_date: madridDate(args.now),
+    snapshot_date: args.snapshotDate ?? madridDate(args.now),
     cash_eur: v.cashEur,
     positions_value_eur: v.positionsValueEur,
     total_eur: v.totalEur,

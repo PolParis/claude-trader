@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { madridDate, sessionFor, zonedTimeToUtc } from "@/core/calendar";
+import { sessionFor, zonedParts, zonedTimeToUtc } from "@/core/calendar";
 import { eur } from "@/core/money";
 import { applyEvent, quantityHeldBefore } from "@/core/portfolio";
 import type { LedgerEvent, MarketId } from "@/core/types";
@@ -21,9 +21,21 @@ const CHAINED = ["journal_entries", "orders", "fills", "order_events", "corporat
 const TRADING: MarketId[] = ["US", "XETRA", "EURONEXT", "BME"];
 const log = (m: string) => console.log(`[${new Date().toISOString()}] ${m}`);
 
+/**
+ * Día bursátil que se cierra. GitHub Actions a veces lanza el cron con horas de retraso: si ya es
+ * madrugada en Madrid (antes de las 09:00, sin bolsas abiertas), el cierre es del día anterior.
+ * `ref` es las 23:00 de ese día en Madrid, para consultar sesiones y franjas de ese día.
+ */
+function closingDay(now: Date): { day: string; ref: Date } {
+  const p = zonedParts(now, "Europe/Madrid");
+  const base = new Date(Date.UTC(p.year, p.month - 1, p.hour < 9 ? p.day - 1 : p.day));
+  const [y, m, d] = [base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate()];
+  return { day: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, ref: zonedTimeToUtc(y, m, d, 23, 0, "Europe/Madrid") };
+}
+
 async function closeExperiment(db: Db, exp: Experiment, now: Date, hostname: string) {
-  const runDate = madridDate(now);
-  const marketDay = TRADING.some((m) => sessionFor(m, now) !== null);
+  const { day: runDate, ref } = closingDay(now);
+  const marketDay = TRADING.some((m) => sessionFor(m, ref) !== null);
   const run = await reserveRun(db, { experimentId: exp.id, runDate, slot: "CLOSE", kind: "close", hostname });
   if (!run) {
     log(`${exp.code}: el cierre de ${runDate} ya estaba hecho.`);
@@ -112,7 +124,7 @@ async function closeExperiment(db: Db, exp: Experiment, now: Date, hostname: str
     }
 
     // 4. Snapshot de cierre (solo días con algún mercado abierto).
-    if (marketDay) await writeSnapshot({ db, exp, state, quotes, fx, kind: "close", runId: run.id, now });
+    if (marketDay) await writeSnapshot({ db, exp, state, quotes, fx, kind: "close", runId: run.id, now, snapshotDate: runDate });
     for (const n of notes) log(`${exp.code}: ${n}`);
     await finishRun(db, run.id, marketDay ? "completed" : "skipped", { summary: { notes }, duration_ms: Date.now() - t0 });
     log(`${exp.code}: cierre ${runDate} completado.`);
@@ -132,7 +144,7 @@ async function anchor(db: Db, experiments: Experiment[], now: Date) {
       const { data } = await db.from(t).select("seq,hash").eq("experiment_id", exp.id).order("seq", { ascending: false }).limit(1);
       heads[t] = data?.[0] ? { seq: Number(data[0].seq), hash: data[0].hash } : null;
     }
-    fs.appendFileSync(file, JSON.stringify({ at: now.toISOString(), date: madridDate(now), experiment: exp.code, heads }) + "\n");
+    fs.appendFileSync(file, JSON.stringify({ at: now.toISOString(), date: closingDay(now).day, experiment: exp.code, heads }) + "\n");
   }
   log(`Anclas añadidas a ${file}`);
 }
