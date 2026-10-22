@@ -16,6 +16,7 @@ import { adminClient, finishRun, insertChained, insertQuotes, listStartedExperim
 import { defaultProvider } from "./lib/market/yahoo";
 import { FX_SYMBOL, fxFromQuotes, loadState, quoteRows, resolvePendingOrders, writeSnapshot } from "./lib/ops";
 import { BENCHMARKS } from "@/core/benchmarks";
+import { SCHEDULED_SLOTS, slotTime } from "@/lib/schedule";
 
 const CHAINED = ["journal_entries", "orders", "fills", "order_events", "corporate_actions", "watchlist_events", "benchmarks", "snapshots", "explanations", "agent_reports"];
 const TRADING: MarketId[] = ["US", "XETRA", "EURONEXT", "BME"];
@@ -49,10 +50,11 @@ async function closeExperiment(db: Db, exp: Experiment, now: Date, hostname: str
     if (marketDay) {
       const { data: runs } = await db.from("runs").select("slot").eq("experiment_id", exp.id).eq("run_date", runDate);
       const done = new Set((runs ?? []).map((r) => r.slot));
-      for (const slot of ["S1", "S2"]) {
+      for (const info of SCHEDULED_SLOTS) {
+        const slot = info.slot;
         const [y, m, d] = runDate.split("-").map(Number);
-        const slotTime = zonedTimeToUtc(y, m, d, slot === "S1" ? 16 : 21, slot === "S1" ? 30 : 0, "Europe/Madrid");
-        if (done.has(slot) || exp.startedAt! > slotTime || slotTime > now) continue;
+        const at = zonedTimeToUtc(y, m, d, info.hour, info.minute, "Europe/Madrid");
+        if (done.has(slot) || exp.startedAt! > at || at > now) continue;
         const missed = await reserveRun(db, { experimentId: exp.id, runDate, slot, kind: "scheduled", hostname });
         if (!missed) continue;
         await insertChained(db, "journal_entries", {
@@ -60,7 +62,7 @@ async function closeExperiment(db: Db, exp: Experiment, now: Date, hostname: str
           run_id: missed.id,
           at: now,
           kind: "run_failed",
-          summary: `Ejecución programada ${slot === "S1" ? "de las 16:30" : "de las 21:00"} no realizada: el equipo no la lanzó (apagado, sin conexión o tarea fallida).`,
+          summary: `Ejecución programada de las ${slotTime(info)} no realizada: el equipo no la lanzó (apagado, sin conexión o tarea fallida).`,
           tickers: [],
         });
         await finishRun(db, missed.id, "failed", { error: "No realizada: no se reservó la franja durante el día" });

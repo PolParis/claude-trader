@@ -18,7 +18,7 @@ const benchmarkNames = Object.fromEntries(BENCHMARKS.map((b) => [b.code, b.name]
 let runIds: string[];
 if (opt("run")) runIds = [opt("run")!];
 else {
-  const decided = (await db.from("journal_entries").select("run_id").eq("experiment_id", exp.id).eq("kind", "decision").order("seq")).data ?? [];
+  const decided = (await db.from("journal_entries").select("run_id").eq("experiment_id", exp.id).in("kind", ["decision", "briefing"]).order("seq")).data ?? [];
   const done = new Set(((await db.from("explanations").select("run_id").eq("experiment_id", exp.id)).data ?? []).map((r) => r.run_id));
   runIds = decided.map((r) => r.run_id as string).filter((id) => id && !done.has(id));
 }

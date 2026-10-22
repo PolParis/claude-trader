@@ -4,7 +4,7 @@ import { getContext, loadData, type Row } from "@/lib/data";
 import { fmtDateTime, fmtNum, fmtPrice } from "@/lib/format";
 import { buildTradeRows, rejectLabel } from "@/lib/trades";
 
-const KIND: Record<string, string> = { decision: "Decisión", run_failed: "Ejecución fallida", run_skipped: "Ejecución omitida", system: "Sistema" };
+const KIND: Record<string, string> = { decision: "Decisión", briefing: "Preapertura (plan)", run_failed: "Ejecución fallida", run_skipped: "Ejecución omitida", system: "Sistema" };
 
 export default async function DiarioPage({ searchParams }: PageProps<"/diario">) {
   const { exp } = await getContext();
@@ -77,7 +77,7 @@ function Entry({ j, trades }: { j: Row; trades: ReturnType<typeof buildTradeRows
     <article className="card p-4">
       <header className="flex flex-wrap items-center gap-2 text-xs text-muted">
         <span>{fmtDateTime(j.at)}</span>
-        <span className={`rounded px-1.5 py-0.5 ${j.kind === "decision" ? "bg-surface-2 text-ink-2" : "bg-warn-bg text-warn-ink"}`}>{KIND[j.kind] ?? j.kind}</span>
+        <span className={`rounded px-1.5 py-0.5 ${j.kind === "decision" || j.kind === "briefing" ? "bg-surface-2 text-ink-2" : "bg-warn-bg text-warn-ink"}`}>{KIND[j.kind] ?? j.kind}</span>
         {(j.tickers ?? []).map((t: string) => (
           <a key={t} href={`/diario?activo=${encodeURIComponent(t)}`} className="rounded border border-line px-1.5 py-0.5 hover:bg-surface-2">
             {t}
@@ -86,7 +86,7 @@ function Entry({ j, trades }: { j: Row; trades: ReturnType<typeof buildTradeRows
         <span className="ml-auto font-mono" title={`Hash: ${j.hash}`}>#{j.seq} · {String(j.hash).slice(0, 10)}…</span>
       </header>
       <p className="mt-2 font-medium">{j.summary}</p>
-      {j.kind === "decision" && (
+      {(j.kind === "decision" || j.kind === "briefing") && (
         <details className="mt-2 text-sm">
           <summary className="cursor-pointer text-xs text-accent">Ver el razonamiento completo</summary>
           <dl className="mt-2 space-y-2">

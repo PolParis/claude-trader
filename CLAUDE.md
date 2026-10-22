@@ -53,21 +53,13 @@ Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del pr
   (fetched_at − regularMarketTime) en cada precio.
 - Claude CLI: `%APPDATA%\npm\node_modules\@anthropic-ai\claude-code\bin\claude.exe` (variable `CLAUDE_BIN` para cambiarlo).
 - Modelo del agente: `sonnet` (plan Pro); configurable en `experiments.agent_model`.
-- Tareas programadas solo en el PC principal (L-V, hora de Madrid): S1 16:30, S2 21:00 y CLOSE 22:30
-  (cierre diario, `npm run close-day`). Decisión del usuario (2026-10-20): el cierre ya no va en GitHub
-  Actions (el workflow queda solo manual); sin anclas de integridad automáticas.
-
-## Variables de entorno (`.env.local`, ignorado por git)
-```
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
-SUPABASE_SECRET_KEY=...          # solo scripts locales y GitHub Actions
-EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
-```
-
-## Comandos
+- Tareas programadas solo en el PC principal (L-V, hora de Madrid): P0 08:30 (preapertura: analiza Asia y
+  deja un plan, SIN órdenes, journal kind `briefing`), S0 09:30 (apertura Europa), S1 16:30, S2 21:00 y CLOSE
+  22:30 (cierre diario + academia los viernes). Horario único en `src/lib/schedule.ts` (ventanas incluidas).
+  Decisión del usuario (2026-10-22): 4 reuniones al día; el portátil solo está enchufado algunas mañanas.
+  El cierre ya no va en GitHub Actions (workflow solo manual); sin anclas de integridad automáticas.
 - `npm run dev` / `npm run build` / `npm test`
-- `npm run run-agent -- --slot S1|S2` (sin `--slot` = ejecución manual)
+- `npm run run-agent -- --slot P0|S0|S1|S2` (sin `--slot` = manual; `--briefing` = preapertura a mano; `--no-team` sin analistas)
 - `npm run explain` (genera las explicaciones que falten), `npm run close-day`, `npm run start-experiment -- --code <code>`, `npm run create-user -- <email>`
 
 ## Estado de fases (actualizado 2026-10-18)

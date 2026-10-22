@@ -53,6 +53,7 @@ export interface PromptInput {
   news: NewsItem[];
   universe: UniverseRow[];
   team?: string; // informe cuantitativo, memos del equipo y manual de la academia
+  briefing?: boolean; // reunión de preapertura: sin órdenes
 }
 
 const f1 = (x: number | null | undefined) => (x === null || x === undefined || !Number.isFinite(x) ? "" : x.toFixed(1));
@@ -80,6 +81,11 @@ export function buildPrompt(p: PromptInput): string {
   L.push(`# EJECUCIÓN ${p.slotLabel} — ${madrid(p.now)} (hora de Madrid) — ${p.experimentName}`);
   L.push(`Inicio del experimento: ${p.startedAt ? madrid(p.startedAt) : "hoy"}. EUR/USD: ${p.eurUsd ?? "sin dato"} (USD por 1 EUR).`);
   L.push("");
+  if (p.briefing) {
+    L.push("## REUNIÓN DE PREAPERTURA (08:30)");
+    L.push("Las bolsas en las que puedes operar todavía están CERRADAS: hoy NO se ejecuta ninguna orden en esta reunión (deja \"orders\" vacío). Analiza cómo ha ido la sesión asiática (Hang Seng, Shanghái, Nikkei, Nifty en el CONTEXTO) y los titulares de la noche, y escribe en el diario un PLAN concreto para la reunión de las 09:30 (apertura de Europa): qué comprarías o venderías, a qué precio aproximado y en qué condiciones. Tu yo de las 09:30 leerá este plan en el diario.");
+    L.push("");
+  }
   L.push("## MERCADOS");
   L.push(...marketStatusLines(p.now));
   L.push("");
@@ -111,7 +117,8 @@ export function buildPrompt(p: PromptInput): string {
   L.push("## TU DIARIO RECIENTE (más antiguo primero)");
   if (!p.journal.length) L.push("(vacío: es tu primera ejecución)");
   for (const j of p.journal) {
-    L.push(`- [${j.at}] ${j.kind === "decision" ? "" : `(${j.kind}) `}${trunc(j.summary, 300)}`);
+    const tag = j.kind === "decision" ? "" : j.kind === "briefing" ? "(plan de preapertura) " : `(${j.kind}) `;
+    L.push(`- [${j.at}] ${tag}${trunc(j.summary, 300)}`);
     if (j.thesis) L.push(`  Tesis: ${trunc(j.thesis, 400)}`);
     if (j.change_mind) L.push(`  Cambiaría si: ${trunc(j.change_mind, 200)}`);
   }

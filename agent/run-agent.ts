@@ -1,4 +1,5 @@
-// Ejecución del agente: `npm run run-agent -- --slot S1|S2` (programada) o sin --slot (manual).
+// Ejecución del agente: `npm run run-agent -- --slot P0|S0|S1|S2` (programada) o sin --slot (manual).
+// P0 es la preapertura (08:30): sin órdenes, el equipo deja un plan. `--briefing` fuerza ese modo a mano.
 // Opciones de prueba: --dry-run (lee la BD pero no escribe nada), --offline (sin BD, cartera
 // vacía; implica --dry-run), --force (llama a Claude aunque todos los mercados estén cerrados).
 import os from "node:os";
@@ -9,6 +10,7 @@ import { sha256Hex } from "@/core/hash";
 import { avgPriceLocal, derivePortfolio, valuePortfolio } from "@/core/portfolio";
 import { DEFAULT_CONFIG, type Currency, type Instrument, type MarketId, type OrderRequest } from "@/core/types";
 import { MAX_WATCHLIST_EXTRA } from "@/core/universe";
+import { slotInfo } from "@/lib/schedule";
 import { callClaude } from "./lib/agent/claude";
 import { explainRun } from "./lib/agent/explain";
 import { latestPlaybook, quantMemoText, riskMemoText, runTeam, saveReport } from "./lib/agent/team";
@@ -41,11 +43,6 @@ const opt = (name: string) => {
 };
 
 const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`);
-const SLOT_LABELS: Record<string, string> = { S1: "programada 16:30", S2: "programada 21:00" };
-// Ventana válida (minutos del día, hora de Madrid) de cada franja programada. Si Windows lanza la
-// tarea tarde (PC dormido sin enchufar y despertado después), fuera de la ventana no se hace nada:
-// el cierre diario la marcará como no realizada en vez de ocupar la franja de otro día.
-const SLOT_WINDOWS: Record<string, [number, number]> = { S1: [16 * 60 + 25, 18 * 60], S2: [20 * 60 + 55, 22 * 60] };
 const TRADING_MARKETS: MarketId[] = ["US", "XETRA", "EURONEXT", "BME"];
 
 async function main() {
@@ -56,7 +53,9 @@ async function main() {
   const p = zonedParts(now, "Europe/Madrid");
   const slot = slotArg ?? `M${String(p.hour).padStart(2, "0")}${String(p.minute).padStart(2, "0")}`;
   const kind = slotArg ? "scheduled" : "manual";
-  const slotLabel = SLOT_LABELS[slot] ?? "manual";
+  const info = slotInfo(slot);
+  const slotLabel = info?.label ?? "manual";
+  const briefing = !!info?.briefing || flag("briefing");
   const hostname = os.hostname();
   const provider = defaultProvider();
 
@@ -71,9 +70,10 @@ async function main() {
   const model = opt("model") ?? exp.model;
   log(`Experimento ${exp.code} · franja ${slot} (${kind}) · equipo ${hostname} · modelo ${model}${dryRun ? " · SIN ESCRITURA" : ""}`);
 
-  const slotWindow = SLOT_WINDOWS[slot];
+  // Cada franja programada tiene una ventana (src/lib/schedule.ts). Si Windows la lanza tarde (PC dormido
+  // sin enchufar y despertado después), no se hace nada: el cierre la marcará como no realizada.
   const minuteOfDay = p.hour * 60 + p.minute;
-  if (slotWindow && !flag("force") && (minuteOfDay < slotWindow[0] || minuteOfDay > slotWindow[1])) {
+  if (info && !flag("force") && (minuteOfDay < info.hour * 60 + info.minute - 5 || minuteOfDay > info.until)) {
     log(`Fuera de la ventana de la franja ${slot} (${String(p.hour).padStart(2, "0")}:${String(p.minute).padStart(2, "0")} en Madrid): probablemente el PC estaba dormido. No se hace nada.`);
     return;
   }
@@ -100,7 +100,7 @@ async function main() {
   const t0 = Date.now();
 
   try {
-    await runBody({ db, exp, runId, now, slotLabel, model, anyOpen, dryRun, provider, t0 });
+    await runBody({ db, exp, runId, now, slotLabel, model, anyOpen, briefing, dryRun, provider, t0 });
   } catch (e) {
     const message = (e as Error).stack ?? String(e);
     log(`ERROR: ${message}`);
@@ -127,6 +127,7 @@ async function runBody(ctx: {
   slotLabel: string;
   model: string;
   anyOpen: boolean;
+  briefing: boolean;
   dryRun: boolean;
   provider: ReturnType<typeof defaultProvider>;
   t0: number;
@@ -162,7 +163,7 @@ async function runBody(ctx: {
   for (const n of pendingNotes) log(n);
 
   // 4. Si no hay ningún mercado abierto (festivo), no se llama a Claude.
-  if (!ctx.anyOpen && !flag("force")) {
+  if (!ctx.anyOpen && !ctx.briefing && !flag("force")) {
     log("Todos los mercados están cerrados: ejecución omitida.");
     if (write) {
       await insertChained(db!, "journal_entries", {
@@ -222,6 +223,7 @@ async function runBody(ctx: {
   const prompt = buildPrompt({
     now,
     slotLabel: ctx.slotLabel,
+    briefing: ctx.briefing,
     experimentName: exp.name,
     startedAt: exp.startedAt,
     initialCapital: exp.config.initialCapital,
@@ -322,7 +324,9 @@ async function runBody(ctx: {
       },
     ]),
   );
-  const orders: OrderRequest[] = decision.orders.map((o) => ({
+  // En la preapertura no se opera: las órdenes que proponga se ignoran (el plan queda en el diario).
+  if (ctx.briefing && decision.orders.length) log(`Preapertura: se ignoran ${decision.orders.length} órdenes propuestas (los mercados están cerrados).`);
+  const orders: OrderRequest[] = (ctx.briefing ? [] : decision.orders).map((o) => ({
     symbol: o.symbol.toUpperCase(),
     side: o.side,
     quantity: o.quantity,
@@ -389,7 +393,7 @@ async function runBody(ctx: {
     experiment_id: exp.id,
     run_id: runId,
     at: new Date(),
-    kind: "decision",
+    kind: ctx.briefing ? "briefing" : "decision",
     summary: decision.journal.summary,
     market_view: decision.journal.market_view,
     thesis: decision.journal.thesis,

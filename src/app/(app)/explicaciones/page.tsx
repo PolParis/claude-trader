@@ -5,6 +5,7 @@ import { allocation, type Slice } from "@/lib/allocation";
 import { getContext, loadData, type Row } from "@/lib/data";
 import { fmtDate, fmtEur, fmtLong, fmtNum, fmtPct, tone } from "@/lib/format";
 import { BASICS, isBasic } from "@/lib/glossary";
+import { slotInfo } from "@/lib/schedule";
 import { CHART_SERIES } from "@/lib/series";
 
 export default async function ExplicacionesPage() {
@@ -132,7 +133,7 @@ function Story({ e, run, orders }: { e: Row; run: Row | undefined; orders: Row[]
     <article className="border-l-2 border-accent pl-4">
       <p className="text-xs capitalize text-muted">
         {fmtLong(new Date(when))}
-        {run?.slot === "S1" ? " · ejecución de la tarde" : run?.slot === "S2" ? " · ejecución de la noche" : ""}
+        {run?.slot && slotInfo(run.slot) ? ` · ${slotInfo(run.slot)!.label}` : ""}
       </p>
       <h3 className="mt-1 font-semibold text-ink">{e.headline}</h3>
       <div className="mt-2 space-y-2 text-sm leading-relaxed text-ink-2">

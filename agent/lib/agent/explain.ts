@@ -72,6 +72,8 @@ export function buildExplainPrompt(args: {
   L.push(`# Ejecución del ${args.runAt} (hora de Madrid)`);
   L.push(`Capital inicial del experimento: ${eur(args.initialCapital)}.`);
   L.push("");
+  if (args.journal.kind === "briefing")
+    L.push("Es la REUNIÓN DE PREAPERTURA (08:30): los mercados estaban cerrados y no se opera. Explica qué ha pasado en Asia por la noche y el plan que deja el equipo para la apertura de las 09:30.\n");
   L.push("## Lo que escribió Claude en su diario (lenguaje técnico)");
   for (const [k, label] of [
     ["summary", "Resumen"],
@@ -130,7 +132,7 @@ export function buildExplainPrompt(args: {
 export async function explainRun(args: { db: Db; exp: Experiment; runId: string; benchmarkNames: Record<string, string>; log: (m: string) => void }): Promise<boolean> {
   const { db, exp, runId, log } = args;
   const one = async (table: string, q: (b: any) => any) => (await q(db.from(table).select("*"))).data as Row[] | null; // eslint-disable-line @typescript-eslint/no-explicit-any
-  const journal = (await one("journal_entries", (b) => b.eq("run_id", runId).eq("kind", "decision")))?.[0];
+  const journal = (await one("journal_entries", (b) => b.eq("run_id", runId).in("kind", ["decision", "briefing"])))?.[0];
   if (!journal) return false;
   const orders = (await one("orders", (b) => b.eq("run_id", runId).order("idx"))) ?? [];
   const fills = (await one("fills", (b) => b.eq("run_id", runId))) ?? [];

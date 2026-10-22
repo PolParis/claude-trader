@@ -4,7 +4,7 @@ import { Empty, NoExperiment, Section, StatusBadge } from "@/components/ui";
 import { getContext, loadData, type Row } from "@/lib/data";
 import { fmtDateTime, fmtLong, fmtPct } from "@/lib/format";
 import { academyReports } from "@/lib/reports";
-import { nextScheduledRun } from "@/lib/schedule";
+import { nextScheduledRun, SCHEDULED_SLOTS, slotTime } from "@/lib/schedule";
 import { zonedParts } from "@/core/calendar";
 
 const short = (s: string, n = 36) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -34,7 +34,7 @@ export default async function OficinaPage() {
   ]);
   const rep = new Map(((reportRows ?? []) as Row[]).map((r) => [r.agent, r]));
   const expl = ((explRows ?? []) as Row[])[0];
-  const decision = lastRun ? d.journal.find((j) => j.run_id === lastRun.id && j.kind === "decision") : undefined;
+  const decision = lastRun ? d.journal.find((j) => j.run_id === lastRun.id && (j.kind === "decision" || j.kind === "briefing")) : undefined;
   const orders = lastRun ? d.orders.filter((o) => o.run_id === lastRun.id) : [];
   const filled = orders.filter((o) => o.status === "filled").length;
   const rejected = orders.filter((o) => o.status === "rejected").length;
@@ -43,12 +43,13 @@ export default async function OficinaPage() {
   const rm = rep.get("risk_manager")?.content as Row | undefined;
   const ac = academy[0];
 
-  // ¿Hay reunión ahora? (franjas de 16:30 y 21:00, de lunes a viernes)
+  // ¿Hay reunión ahora? (los 10 primeros minutos de cada franja, de lunes a viernes)
   const now = new Date();
   const p = zonedParts(now, "Europe/Madrid");
   const mins = p.hour * 60 + p.minute;
   const weekday = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay();
-  const live = weekday >= 1 && weekday <= 5 && ((mins >= 990 && mins < 1000) || (mins >= 1260 && mins < 1270));
+  const live = weekday >= 1 && weekday <= 5 && SCHEDULED_SLOTS.some((s) => mins >= s.hour * 60 + s.minute && mins < s.hour * 60 + s.minute + 10);
+  const times = SCHEDULED_SLOTS.map(slotTime).join(", ");
   const caption = live
     ? "Reunión en curso"
     : lastRun
@@ -73,7 +74,7 @@ export default async function OficinaPage() {
       name: "Recolectora de datos",
       role: "Código",
       ai: false,
-      when: "En cada reunión (16:30 y 21:00)",
+      when: `En cada reunión (${times})`,
       does: "Descarga de Yahoo Finance los precios de 160 activos, un año de histórico, índices de contexto, el EUR/USD y titulares. Calcula indicadores como el RSI o la distancia al máximo.",
       at: lastRun?.reserved_at,
       summary: lastRun ? `Informe para el gestor de ${(Number(lastRun.prompt_chars ?? 0) / 1000).toFixed(0)} mil caracteres.` : null,
@@ -220,7 +221,8 @@ export default async function OficinaPage() {
       <div className="card p-4 text-sm text-ink-2">
         <p>
           El fondo funciona como un pequeño equipo. Cuatro «empleados» son <strong className="text-ink">IA (Claude)</strong> y cuatro son <strong className="text-ink">código</strong>{" "}
-          que hace cálculos y aplica las reglas sin opinar. Cada uno trabaja en su sala y se reúnen dos veces al día, a las 16:30 y a las 21:00, en la sala de reuniones. La reunión real dura unos 2
+          que hace cálculos y aplica las reglas sin opinar. Cada uno trabaja en su sala y se reúnen cuatro veces al día en la sala de reuniones: {times}. La de las 08:30 es de preapertura (con las bolsas cerradas
+          analizan la noche en Asia y dejan un plan, sin operar). La reunión real dura unos 2
           minutos; aquí la ves en bucle. Muévete por la oficina con el ratón y pulsa sobre un agente para ver qué ha hecho.
         </p>
       </div>

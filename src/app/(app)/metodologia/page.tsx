@@ -28,7 +28,7 @@ export default async function MetodologiaPage() {
           (la fecha se fija al lanzar el experimento y la base de datos impide cambiarla).
         </p>
         <p className="mt-2">
-          Dos veces por día laborable (16:30 y 21:00, hora de Madrid) un script en el ordenador del autor reúne la cartera, las últimas 20 entradas del diario y los
+          Cuatro veces por día laborable (08:30, 09:30, 16:30 y 21:00, hora de Madrid) un script en el ordenador del autor reúne la cartera, las últimas 20 entradas del diario y los
           datos de mercado del momento, y se los pasa a Claude mediante <code>claude -p</code> (la suscripción del autor, sin API de pago). En esa llamada Claude{" "}
           <strong className="text-ink">no tiene acceso a internet, herramientas ni a la base de datos</strong>: solo lee el texto y devuelve un JSON con su diario,
           sus órdenes y cambios en su lista de seguimiento. Tiene prohibido usar precios o noticias de memoria y debe escribir el diario aunque no opere.
@@ -109,7 +109,7 @@ export default async function MetodologiaPage() {
           <li>Los precios con retraso hacen que la ejecución sea al precio de hace unos minutos, no al real del instante.</li>
           <li>Se ignoran impuestos, retenciones de dividendos y costes de custodia.</li>
           <li>Yahoo Finance es una fuente no oficial: puede fallar, cambiar o dar algún dato erróneo. Los fallos quedan registrados.</li>
-          <li>Claude solo decide dos veces al día. Si el ordenador está apagado, esa ejecución se registra como no realizada.</li>
+          <li>Claude solo decide en las reuniones programadas. La de las 08:30 es de preapertura: con las bolsas cerradas no opera y solo deja un plan para la apertura. Si el ordenador está apagado o sin enchufar, esa reunión se registra como no realizada.</li>
           <li>Un periodo corto no permite sacar conclusiones estadísticas sobre la habilidad de nadie, humano o IA.</li>
         </ul>
       </Section>

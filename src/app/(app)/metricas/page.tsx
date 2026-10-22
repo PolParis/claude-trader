@@ -1,3 +1,4 @@
+import { slotInfo, slotTime } from "@/lib/schedule";
 import { BENCHMARKS } from "@/core/benchmarks";
 import { annualizedReturn, annualizedVolatility, daysBetween, maxDrawdown, sharpeRatio, totalReturn, turnover, winRate, type SeriesPoint } from "@/core/metrics";
 import { NoExperiment, Section, Stat, StatusBadge } from "@/components/ui";
@@ -104,7 +105,7 @@ export default async function MetricasPage() {
               {[...d.runs].reverse().map((r) => (
                 <tr key={r.id}>
                   <td className="whitespace-nowrap">{fmtDateTime(r.reserved_at)}</td>
-                  <td>{r.kind === "close" ? "Cierre" : r.kind === "manual" ? `Manual (${r.slot.slice(1, 3)}:${r.slot.slice(3)})` : r.slot === "S1" ? "16:30" : "21:00"}</td>
+                  <td>{r.kind === "close" ? "Cierre" : r.kind === "manual" ? `Manual (${r.slot.slice(1, 3)}:${r.slot.slice(3)})` : slotInfo(r.slot) ? slotTime(slotInfo(r.slot)!) : r.slot}</td>
                   <td><StatusBadge status={r.status} /></td>
                   <td className="text-xs text-muted">{r.hostname}</td>
                   <td className="r">{r.duration_ms ? `${Math.round(r.duration_ms / 1000)} s` : "—"}</td>

@@ -1,6 +1,6 @@
 # Lanza una ejecucion del agente y guarda el log en agent\logs.
-# Lo usa el Programador de tareas: run-agent.ps1 -Slot S1 (16:30) / S2 (21:00) / CLOSE (22:30, cierre diario)
-param([Parameter(Mandatory = $true)][ValidateSet("S1", "S2", "CLOSE")][string]$Slot)
+# Lo usa el Programador de tareas: run-agent.ps1 -Slot P0 (08:30) / S0 (09:30) / S1 (16:30) / S2 (21:00) / CLOSE (22:30)
+param([Parameter(Mandatory = $true)][ValidateSet("P0", "S0", "S1", "S2", "CLOSE")][string]$Slot)
 
 # El cierre solo tiene sentido despues del cierre de EE. UU. y antes de que abra Europa: si Windows
 # lo lanza tarde (PC dormido) a media manana, no se hace nada.

@@ -137,7 +137,7 @@ export async function runAcademy(args: { db: Db; exp: Experiment; day: string; l
     period,
     since,
     snapshots,
-    journal: journalAll.filter((j) => inWeek(j) && j.kind === "decision"),
+    journal: journalAll.filter((j) => inWeek(j) && (j.kind === "decision" || j.kind === "briefing")),
     orders: ordersAll.filter(inWeek),
     reports: reportsAll.filter(inWeek),
     previousPlaybook: previous?.playbook ?? null,
