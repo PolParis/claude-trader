@@ -7,7 +7,7 @@ import { academyReports } from "@/lib/reports";
 import { nextScheduledRun } from "@/lib/schedule";
 import { zonedParts } from "@/core/calendar";
 
-const short = (s: string, n = 34) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+const short = (s: string, n = 36) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 interface Card {
   id: string;
@@ -56,15 +56,15 @@ export default async function OficinaPage() {
       : `Aún no ha habido reuniones · primera: ${fmtLong(nextScheduledRun(now).at)}`;
 
   const agents: OfficeAgent[] = [
-    { id: "datos", name: "Recolectora", role: "Datos de mercado", ai: false, hair: "#2b2b2b", desk: { x: 110, y: 130 }, seat: { x: 460, y: 252 }, slot: [0, 0.16], bubble: "Datos de 160 activos listos" },
-    { id: "motor", name: "Motor cuant", role: "Monte Carlo y riesgo", ai: false, hair: "#7a4b2a", desk: { x: 290, y: 130 }, seat: { x: 400, y: 252 }, slot: [0.12, 0.62], bubble: qe?.risk ? `Volatilidad ${fmtPct(qe.risk.annVol, false, 0)}, VaR ${fmtPct(qe.risk.var95_1d, false, 1)}` : "Calculando riesgos" },
-    { id: "analista", name: "Analista cuant", role: "Ideas con datos", ai: true, hair: "#d9a441", desk: { x: 670, y: 130 }, seat: { x: 560, y: 252 }, slot: [0.2, 0.62], bubble: qa?.ideas?.[0] ? short(`${qa.ideas[0].action} ${qa.ideas[0].symbol} (${qa.ideas[0].horizon} plazo)`) : "Buscando oportunidades" },
-    { id: "riesgos", name: "Gestora de riesgos", role: "Límites y alertas", ai: true, hair: "#5a2d1a", desk: { x: 850, y: 130 }, seat: { x: 620, y: 300 }, slot: [0.24, 0.66], bubble: rm ? `Riesgo ${rm.risk_level}` : "Revisando límites" },
-    { id: "gestor", name: "Gestor de cartera", role: "Decide las órdenes", ai: true, hair: "#1f1f1f", desk: { x: 480, y: 450 }, seat: { x: 340, y: 300 }, slot: [0.08, 0.86], bubble: orders.length ? `${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}. ¡Adelante!` : decision ? "Hoy no opero" : "Escuchando al equipo" },
-    { id: "ejecucion", name: "Mesa de ejecución", role: "Motor de órdenes", ai: false, hair: "#9b9b9b", desk: { x: 110, y: 450 }, seat: { x: 430, y: 345 }, slot: [0.62, 0.82], bubble: orders.length ? `${filled} ejecutadas, ${rejected} rechazadas` : "Nada que ejecutar" },
-    { id: "profesor", name: "Profesor", role: "Te lo explica", ai: true, hair: "#c0c0c0", desk: { x: 290, y: 450 }, seat: { x: 540, y: 345 }, slot: [0.74, 0.96], bubble: "Te lo explico en sencillo" },
-    { id: "academia", name: "Academia", role: "Post-mortem semanal", ai: true, hair: "#8c2f39", desk: { x: 670, y: 450 }, seat: null, slot: null, bubble: null },
-    { id: "auditor", name: "Auditor", role: "Cierre e integridad", ai: false, hair: "#3d5a80", desk: { x: 850, y: 450 }, seat: null, slot: null, bubble: null },
+    { id: "datos", name: "Recolectora", role: "Código", ai: false, hair: "#2b2b2b", bubble: "Datos de 160 activos listos", summary: lastRun ? "Ha traído precios, histórico y titulares para la última reunión." : null },
+    { id: "motor", name: "Motor cuant", role: "Código", ai: false, hair: "#7a4b2a", bubble: qe?.risk ? `Volatilidad ${fmtPct(qe.risk.annVol, false, 0)}, VaR ${fmtPct(qe.risk.var95_1d, false, 1)}` : "Calculando riesgos", summary: rep.get("quant_engine")?.summary ?? null },
+    { id: "analista", name: "Analista cuant", role: "IA (Claude)", ai: true, hair: "#d9a441", bubble: qa?.ideas?.[0] ? short(`Idea: ${qa.ideas[0].action} ${qa.ideas[0].symbol}`) : "Buscando oportunidades", summary: qa?.summary ?? null },
+    { id: "riesgos", name: "Gestora de riesgos", role: "IA (Claude)", ai: true, hair: "#5a2d1a", bubble: rm ? `Riesgo ${rm.risk_level}` : "Revisando límites", summary: rm ? `Riesgo ${rm.risk_level}. ${rm.summary}` : null },
+    { id: "gestor", name: "Gestor de cartera", role: "IA (Claude)", ai: true, hair: "#1f1f1f", bubble: orders.length ? `${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}. ¡Adelante!` : decision ? "Hoy no opero" : "Escuchando al equipo", summary: decision?.summary ?? null },
+    { id: "ejecucion", name: "Mesa de ejecución", role: "Código", ai: false, hair: "#9b9b9b", bubble: orders.length ? `${filled} ejecutadas, ${rejected} rechazadas` : "Nada que ejecutar", summary: lastRun ? (orders.length ? `${orders.length} órdenes: ${filled} ejecutadas, ${rejected} rechazadas.` : "No hubo órdenes que ejecutar.") : null },
+    { id: "profesor", name: "Profesor", role: "IA (Claude)", ai: true, hair: "#c0c0c0", bubble: "Te lo explico en sencillo", summary: expl?.headline ?? null },
+    { id: "academia", name: "Academia", role: "IA (Claude)", ai: true, hair: "#8c2f39", bubble: null, summary: ac ? `Semana ${ac.period} · nota ${ac.content.grade}. ${ac.summary}` : "Hará su primera revisión el viernes por la noche." },
+    { id: "auditor", name: "Auditor", role: "Código", ai: false, hair: "#3d5a80", bubble: null, summary: lastClose ? `Último cierre del día: ${lastClose.run_date}.` : null },
   ];
 
   const cards: Card[] = [
@@ -220,8 +220,8 @@ export default async function OficinaPage() {
       <div className="card p-4 text-sm text-ink-2">
         <p>
           El fondo funciona como un pequeño equipo. Cuatro «empleados» son <strong className="text-ink">IA (Claude)</strong> y cuatro son <strong className="text-ink">código</strong>{" "}
-          que hace cálculos y aplica las reglas sin opinar. Se reúnen dos veces al día, a las 16:30 y a las 21:00. La reunión real dura unos 2 minutos; aquí la ves en bucle. Pulsa
-          sobre un agente para ver qué ha hecho.
+          que hace cálculos y aplica las reglas sin opinar. Cada uno trabaja en su sala y se reúnen dos veces al día, a las 16:30 y a las 21:00, en la sala de reuniones. La reunión real dura unos 2
+          minutos; aquí la ves en bucle. Muévete por la oficina con el ratón y pulsa sobre un agente para ver qué ha hecho.
         </p>
       </div>
 
