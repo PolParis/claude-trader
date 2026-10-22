@@ -93,6 +93,14 @@ EXPERIMENT_CODE=test-1           # experimento sobre el que actúan los scripts
   ejecución, 2.ª llamada `claude -p` (`agent/lib/agent/explain.ts`) → tabla encadenada `explanations`
   (1 por run) → página `/explicaciones` (historia, reparto por país/tipo, glosario). Si falla, no afecta a
   las órdenes; se rellena con `npm run explain`.
+- Equipo de agentes (2026-10-22, petición del usuario, inspirado en un "fondo gestionado por IA"):
+  motor cuantitativo en código (`src/core/quant.ts`, `agent/lib/quant-report.ts`: riesgo, VaR/CVaR, beta,
+  Monte Carlo bootstrap por bloques con deriva neutral del 5 %, estrés, correlaciones, contribución al
+  riesgo, factores, post-mortem) → analista cuantitativo + gestora de riesgos (`agent/lib/agent/team.ts`,
+  2 llamadas `claude -p` en paralelo, fallan sin bloquear) → gestor. Academia los viernes en la tarea
+  CLOSE (`npm run academy`, `agent/lib/agent/academy.ts`): post-mortem + MANUAL DE ESTRATEGIA que lee el
+  gestor. Todo en la tabla encadenada `agent_reports`. Web: `/oficina` (animación SVG) y `/cuantitativo`.
+  Consumo: ~25 k tokens la decisión + ~10 k cada analista; prompt del gestor ~40 k caracteres.
 - Web: https://claude-trader-livid.vercel.app (despliegue automático al hacer push a main).
 - Rama principal `main`. Repo público (GitHub Actions gratis + transparencia).
 - `cacheComponents` desactivado en `next.config.ts`: la web es privada y dinámica (sesión en cada petición).

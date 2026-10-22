@@ -39,6 +39,17 @@ export default async function MetodologiaPage() {
           franja horaria se reserva una sola vez en la base de datos (restricción UNIQUE) junto con el equipo que la lanzó.
         </p>
         <p className="mt-2">
+          Antes de decidir, un <strong className="text-ink">equipo</strong> prepara la reunión. Un motor cuantitativo (código) calcula el riesgo de la cartera
+          (volatilidad, VaR, CVaR, beta), 5.000 escenarios de Monte Carlo, pruebas de estrés, correlaciones, un ranking por factores (momentum, tendencia, baja volatilidad y
+          valor) y el post-mortem de cada operación pasada. Después, dos llamadas a Claude en paralelo, también sin herramientas, hacen de analista cuantitativo y de gestora de
+          riesgos y escriben un memo cada una. El gestor recibe esos memos y el manual de estrategia de la academia. Cada viernes, la academia (otra llamada a Claude) revisa la
+          semana con los datos y reescribe ese manual. Todo queda guardado en el registro encadenado y se puede ver en las páginas Oficina y Cuantitativo.
+        </p>
+        <p className="mt-2">
+          El Monte Carlo usa bootstrap por bloques de 5 días reales del último año, con semilla fija (reproducible). Se le quita la tendencia pasada y se supone un 5 % anual
+          para la bolsa: así mide el riesgo sin suponer que lo que más subió seguirá subiendo.
+        </p>
+        <p className="mt-2">
           Después de ejecutar las órdenes, una segunda llamada a Claude (también sin herramientas) redacta una <strong className="text-ink">explicación para
           principiantes</strong> de lo que ha hecho y de lo que el sistema le ha rechazado. Esa explicación no influye en ninguna orden y se guarda en el mismo
           registro append-only con hash encadenado.

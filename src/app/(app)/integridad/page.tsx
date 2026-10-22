@@ -13,6 +13,7 @@ const TABLES: { table: string; label: string }[] = [
   { table: "benchmarks", label: "Compra de benchmarks" },
   { table: "snapshots", label: "Valoraciones" },
   { table: "explanations", label: "Explicaciones" },
+  { table: "agent_reports", label: "Informes del equipo y academia" },
 ];
 
 interface Anchor {

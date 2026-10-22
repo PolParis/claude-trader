@@ -1,6 +1,6 @@
 // Reúne todos los datos de mercado de una ejecución: cotizaciones del universo, contexto,
 // histórico + indicadores y titulares.
-import { computeIndicators } from "@/core/indicators";
+import { computeIndicators, type DailyClose } from "@/core/indicators";
 import { BASE_UNIVERSE, MARKET_CONTEXT } from "@/core/universe";
 import type { UniverseRow } from "./agent/prompt";
 import type { MarketDataProvider, MarketQuote, NewsItem } from "./market/provider";
@@ -14,6 +14,7 @@ export interface MarketSnapshot {
   news: NewsItem[];
   regions: Map<string, string>;
   missing: string[];
+  histories: Map<string, DailyClose[]>; // cierres diarios del último año (para el motor cuantitativo)
 }
 
 export async function gatherMarketData(
@@ -32,9 +33,12 @@ export async function gatherMarketData(
     .filter((q) => opts.allowCrypto || q.market !== "CRYPTO");
 
   const from = new Date(Date.now() - 400 * 86_400_000);
+  const histories = new Map<string, DailyClose[]>();
   const indicators = await mapLimit(tradable, 6, async (q) => {
     try {
-      return computeIndicators(await provider.getDailyHistory(q.symbol, from), q.price);
+      const h = await provider.getDailyHistory(q.symbol, from);
+      histories.set(q.symbol, h);
+      return computeIndicators(h, q.price);
     } catch (e) {
       opts.log(`Sin histórico de ${q.symbol}: ${(e as Error).message}`);
       return null;
@@ -66,5 +70,6 @@ export async function gatherMarketData(
     news,
     regions,
     missing,
+    histories,
   };
 }

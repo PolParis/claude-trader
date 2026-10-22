@@ -11,6 +11,8 @@ import { DEFAULT_CONFIG, type Currency, type Instrument, type MarketId, type Ord
 import { MAX_WATCHLIST_EXTRA } from "@/core/universe";
 import { callClaude } from "./lib/agent/claude";
 import { explainRun } from "./lib/agent/explain";
+import { latestPlaybook, quantMemoText, riskMemoText, runTeam, saveReport } from "./lib/agent/team";
+import { buildQuantReport, quantReportText, type QuantReport } from "./lib/quant-report";
 import { buildPrompt, systemPrompt } from "./lib/agent/prompt";
 import { decisionJsonSchema, parseDecision, type Decision } from "./lib/agent/schema";
 import {
@@ -180,6 +182,40 @@ async function runBody(ctx: {
   // 5. Prompt.
   const prices = new Map([...market.quotes].map(([s, q]) => [s, q.price]));
   const valuation = valuePortfolio(state.portfolio, prices, { USD: fx.USD?.rate });
+  // 5a. Motor cuantitativo (código) y equipo de analistas (Claude, en paralelo).
+  let quant: QuantReport | null = null;
+  try {
+    quant = await buildQuantReport({ market, provider, holdings: valuation.holdings, totalEur: valuation.totalEur, events: state.events, now, log });
+    const mc = quant.monteCarlo;
+    log(`Cuant: vol ${(100 * (quant.risk?.annVol ?? 0)).toFixed(1)} %, VaR95 ${(100 * (quant.risk?.var95_1d ?? 0)).toFixed(2)} %, Monte Carlo 1 año mediana ${mc ? (100 * (mc.final.p50 - 1)).toFixed(1) : "?"} %`);
+    if (write) await saveReport(db!, { experimentId: exp.id, runId, agent: "quant_engine", summary: quantSummary(quant), content: compact(quant) });
+  } catch (e) {
+    log(`Cuant: no se pudo calcular el informe (${(e as Error).message}).`);
+  }
+  const playbook = db ? await latestPlaybook(db, exp.id) : null;
+  let teamText = "";
+  if (quant) {
+    const positionsText = valuation.holdings.length
+      ? valuation.holdings
+          .map((h) => `${h.symbol}: ${((h.valueEur / valuation.totalEur) * 100).toFixed(1)} % de la cartera, ${((h.valueEur / h.costEur - 1) * 100).toFixed(1)} % desde la compra`)
+          .concat(`Efectivo: ${((valuation.cashEur / valuation.totalEur) * 100).toFixed(1)} %`)
+          .join("\n")
+      : "Todo en efectivo.";
+    const team = flag("no-team")
+      ? { quant: null, risk: null }
+      : await runTeam({ quantText: quantReportText(quant, { factors: 25 }), positionsText, playbook: playbook?.playbook ?? null, model: ctx.model, config: exp.config }, log);
+    if (write && team.quant) await saveReport(db!, { experimentId: exp.id, runId, agent: "quant_analyst", summary: team.quant.value.summary, content: team.quant.value, model: ctx.model, durationMs: team.quant.durationMs });
+    if (write && team.risk) await saveReport(db!, { experimentId: exp.id, runId, agent: "risk_manager", summary: team.risk.value.summary, content: team.risk.value, model: ctx.model, durationMs: team.risk.durationMs });
+    teamText = [
+      `## INFORME CUANTITATIVO (calculado por código)\n${quantReportText(quant, { factors: 15 })}`,
+      team.quant ? `## MEMO DEL ANALISTA CUANTITATIVO\n${quantMemoText(team.quant.value)}` : "",
+      team.risk ? `## MEMO DE LA GESTORA DE RIESGOS\n${riskMemoText(team.risk.value)}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+  teamText += `\n\n## MANUAL DE ESTRATEGIA DE LA ACADEMIA\n${playbook ? `(versión ${playbook.period})\n${playbook.playbook}` : "Todavía no hay manual: la academia lo redactará el viernes con el post-mortem de la semana."}`;
+
   const lastOrders = db
     ? ((await db.from("orders").select("at,symbol,side,quantity,status,reject_reason").eq("experiment_id", exp.id).order("seq", { ascending: false }).limit(15)).data ?? []).reverse()
     : [];
@@ -221,6 +257,7 @@ async function runBody(ctx: {
     context: market.context,
     news: market.news,
     universe: market.universe,
+    team: teamText,
   });
   const sys = systemPrompt(exp.config, MAX_WATCHLIST_EXTRA);
   log(`Prompt: ${prompt.length} caracteres. Llamando a claude -p (${ctx.model})...`);
@@ -417,3 +454,14 @@ main().catch((e) => {
   log(`ERROR FATAL: ${(e as Error).stack ?? e}`);
   process.exit(1);
 });
+
+function quantSummary(q: QuantReport): string {
+  const pc = (x: number | null | undefined) => (x === null || x === undefined ? "?" : `${(x * 100).toFixed(1)} %`);
+  const mc = q.monteCarlo;
+  return `Volatilidad ${pc(q.risk?.annVol)}, VaR 95 % diario ${pc(q.risk?.var95_1d)}, beta ${q.risk?.beta?.toFixed(2) ?? "?"}. Monte Carlo a 1 año: mediana ${mc ? pc(mc.final.p50 - 1) : "?"}, prob. de pérdida ${mc ? pc(mc.probLoss) : "?"}, prob. de batir al MSCI World ${mc ? pc(mc.probBeatBench) : "?"}.`;
+}
+
+/** Redondea los números (6 cifras significativas) para guardar el informe sin ruido decimal. */
+function compact<T>(x: T): T {
+  return JSON.parse(JSON.stringify(x, (_k, v) => (typeof v === "number" ? (Number.isFinite(v) ? Number(v.toPrecision(6)) : null) : v)));
+}

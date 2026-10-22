@@ -19,7 +19,15 @@ try {
   Set-Location $repo
   New-Item -ItemType Directory -Force -Path "agent\logs" | Out-Null
   $log = Join-Path $repo ("agent\logs\{0}_{1}.log" -f (Get-Date -Format "yyyy-MM-dd"), $Slot)
-  if ($Slot -eq "CLOSE") { cmd.exe /c "npm run close-day >> `"$log`" 2>&1" }
+  if ($Slot -eq "CLOSE") {
+    cmd.exe /c "npm run close-day >> `"$log`" 2>&1"
+    # Los viernes (o el sabado de madrugada si el cierre se lanzo tarde), la academia revisa la semana.
+    $dow = (Get-Date).DayOfWeek
+    if ($dow -eq "Friday" -or ($dow -eq "Saturday" -and $hour -lt 9)) {
+      $day = if ($dow -eq "Saturday") { (Get-Date).AddDays(-1).ToString("yyyy-MM-dd") } else { (Get-Date).ToString("yyyy-MM-dd") }
+      cmd.exe /c "npm run academy -- --day $day >> `"$log`" 2>&1"
+    }
+  }
   else { cmd.exe /c "npm run run-agent -- --slot $Slot >> `"$log`" 2>&1" }
   $code = $LASTEXITCODE
 }

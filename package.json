@@ -15,7 +15,8 @@
     "start-experiment": "tsx --env-file-if-exists=.env.local agent/start-experiment.ts",
     "create-user": "tsx --env-file-if-exists=.env.local agent/create-user.ts",
     "market-check": "tsx --env-file-if-exists=.env.local agent/market-check.ts",
-    "explain": "tsx --env-file-if-exists=.env.local agent/explain.ts"
+    "explain": "tsx --env-file-if-exists=.env.local agent/explain.ts",
+    "academy": "tsx --env-file-if-exists=.env.local agent/academy.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -18,9 +18,11 @@ Reglas estrictas:
 7. "market" se ejecuta al precio actual con slippage. "limit" es válida hasta el cierre de la sesión de hoy: si el precio actual la cumple se ejecuta ya; si no, queda pendiente reservando efectivo o acciones, y si el precio no la toca caduca al cierre.
 8. Las ventas se ejecutan antes que las compras y su efectivo sirve para las compras de esta misma ejecución. Deja margen para comisiones y tipo de cambio: los precios en USD se convierten a EUR con el EUR/USD indicado.
 9. Mandato del propietario de la cartera: no te limites a fondos indexados de Europa y EE. UU. Busca activamente oportunidades en ACCIONES INDIVIDUALES de todo el mundo (China, India, Brasil, México, Argentina, Corea, Taiwán, Japón, Israel, Sudáfrica, sudeste asiático...) además de EE. UU. y Europa, eligiéndolas según su comportamiento reciente, su histórico y su valoración. Diversifica por regiones, sectores y tipos de activo. Puedes asumir más riesgo en emergentes, China o tecnología si los datos lo justifican; explica en el diario por qué eliges cada mercado y cada empresa. Los ETF de país sirven para exposición amplia, pero no deben sustituir la selección de empresas concretas cuando veas oportunidades.
-10. Escribe SIEMPRE el diario completo aunque no hagas ninguna orden. Sé concreto y cita cifras del mensaje. Escribe en español.
-11. watchlist_changes: puedes añadir (máximo ${maxWatchlist} extra) o quitar símbolos de Yahoo Finance de bolsas de EE. UU., Xetra, Euronext o BME que coticen en EUR o USD. Aparecerán en el UNIVERSO desde la próxima ejecución; no puedes operarlos antes.
-12. Responde únicamente con el JSON del esquema.`;
+10. Trabajas con un equipo: un motor cuantitativo (código: riesgo, Monte Carlo, estrés, factores, post-mortem), un analista cuantitativo y una gestora de riesgos, y una academia que cada semana revisa los resultados y actualiza el MANUAL DE ESTRATEGIA. Sus memos son consejos: la decisión es tuya, pero si no sigues al equipo o al manual, explica por qué en la tesis. Sigue las reglas del manual salvo que los datos de hoy justifiquen lo contrario.
+11. Combina posiciones estratégicas (meses o años) con posiciones tácticas (días o semanas) cuando los datos lo justifiquen. Para cada posición táctica, deja escrito en la tesis el objetivo y el nivel en el que saldrías, y revísalos en cada ejecución. No operes por operar: cada operación cuesta comisión y slippage.
+12. Escribe SIEMPRE el diario completo aunque no hagas ninguna orden. Sé concreto y cita cifras del mensaje. Escribe en español.
+13. watchlist_changes: puedes añadir (máximo ${maxWatchlist} extra) o quitar símbolos de Yahoo Finance de bolsas de EE. UU., Xetra, Euronext o BME que coticen en EUR o USD. Aparecerán en el UNIVERSO desde la próxima ejecución; no puedes operarlos antes.
+14. Responde únicamente con el JSON del esquema.`;
 }
 
 export interface UniverseRow {
@@ -50,6 +52,7 @@ export interface PromptInput {
   context: { label: string; quote: MarketQuote | undefined }[];
   news: NewsItem[];
   universe: UniverseRow[];
+  team?: string; // informe cuantitativo, memos del equipo y manual de la academia
 }
 
 const f1 = (x: number | null | undefined) => (x === null || x === undefined || !Number.isFinite(x) ? "" : x.toFixed(1));
@@ -122,6 +125,10 @@ export function buildPrompt(p: PromptInput): string {
   if (p.news.length) {
     L.push("## TITULARES RECIENTES (Yahoo Finance; pueden ser incompletos o sesgados)");
     for (const n of p.news) L.push(`- ${n.publishedAt ? madrid(n.publishedAt) : ""} ${trunc(n.title, 160)}${n.tickers.length ? ` [${n.tickers.slice(0, 4).join(",")}]` : ""}`);
+    L.push("");
+  }
+  if (p.team) {
+    L.push(p.team.trim());
     L.push("");
   }
   L.push("## UNIVERSO OPERABLE");

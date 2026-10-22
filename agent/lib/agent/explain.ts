@@ -40,12 +40,13 @@ const SYSTEM = `Eres un profesor paciente que explica inversiones a un estudiant
 Reglas:
 1. Lenguaje sencillo. Si usas un término técnico (PER, dividendo, ETF, volatilidad, momentum...), explícalo en la misma frase o inclúyelo en "concepts".
 2. Cifras SOLO las del mensaje (precios, porcentajes, importes). Puedes usar conocimiento general para decir qué es una empresa o un fondo (por ejemplo "Petrobras es la petrolera estatal de Brasil"), pero nunca inventes precios, noticias ni resultados.
-3. Explica también lo que NO salió como Claude quería (órdenes rechazadas y su motivo) y por qué el sistema lo impidió.
-4. Sé honesto: no prometas ganancias ni digas que una decisión es buena o mala con certeza. Es un experimento.
-5. "operations": una entrada por cada activo comprado o vendido de verdad (no las rechazadas).
-6. "concepts": de 0 a 4 conceptos NUEVOS que aparezcan hoy (indicadores, tipos de activo, términos del diario, reglas del experimento...); no repitas los de la lista "ya explicados". Explícalos con un ejemplo sencillo, a poder ser con cifras de hoy. Son para un glosario que el estudiante irá ampliando con el tiempo.
-7. Usa ejemplos y comparaciones cotidianas cuando ayuden. Tutea al lector.
-8. Responde solo con el JSON del esquema.`;
+3. Si el mensaje incluye lo que dijo el equipo (motor cuantitativo, analista, gestora de riesgos), explica en sencillo qué aportó cada uno (por ejemplo qué significa el Monte Carlo o el VaR de hoy) y si el gestor les hizo caso.
+4. Explica también lo que NO salió como Claude quería (órdenes rechazadas y su motivo) y por qué el sistema lo impidió.
+5. Sé honesto: no prometas ganancias ni digas que una decisión es buena o mala con certeza. Es un experimento.
+6. "operations": una entrada por cada activo comprado o vendido de verdad (no las rechazadas).
+7. "concepts": de 0 a 4 conceptos NUEVOS que aparezcan hoy (indicadores, tipos de activo, términos del diario, reglas del experimento...); no repitas los de la lista "ya explicados". Explícalos con un ejemplo sencillo, a poder ser con cifras de hoy. Son para un glosario que el estudiante irá ampliando con el tiempo.
+8. Usa ejemplos y comparaciones cotidianas cuando ayuden. Tutea al lector.
+9. Responde solo con el JSON del esquema.`;
 
 const eur = (x: unknown) => `${Number(x).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 const pct = (x: number) => `${(x * 100).toLocaleString("es-ES", { maximumFractionDigits: 2 })} %`;
@@ -61,6 +62,7 @@ export function buildExplainPrompt(args: {
   benchmarkNames: Record<string, string>;
   previous: Row[];
   knownConcepts: string[];
+  team?: Row[];
 }): string {
   const L: string[] = [];
   const name = (s: string) => {
@@ -107,6 +109,12 @@ export function buildExplainPrompt(args: {
     if (bm) L.push(`Índices de referencia con el mismo dinero: ${bm}`);
     L.push("");
   }
+  if (args.team?.length) {
+    const names: Record<string, string> = { quant_engine: "Motor cuantitativo (código)", quant_analyst: "Analista cuantitativo", risk_manager: "Gestora de riesgos" };
+    L.push("## LO QUE DIJO EL EQUIPO ANTES DE DECIDIR");
+    for (const r of args.team) L.push(`- ${names[r.agent] ?? r.agent}: ${r.summary}`);
+    L.push("");
+  }
   if (args.previous.length) {
     L.push("## Titulares de tus explicaciones anteriores (para dar continuidad)");
     for (const p of args.previous) L.push(`- ${p.at.slice(0, 16).replace("T", " ")}: ${p.headline}`);
@@ -127,6 +135,7 @@ export async function explainRun(args: { db: Db; exp: Experiment; runId: string;
   const orders = (await one("orders", (b) => b.eq("run_id", runId).order("idx"))) ?? [];
   const fills = (await one("fills", (b) => b.eq("run_id", runId))) ?? [];
   const snapshot = (await one("snapshots", (b) => b.eq("run_id", runId).order("seq", { ascending: false }).limit(1)))?.[0] ?? null;
+  const team = (await one("agent_reports", (b) => b.eq("run_id", runId).order("seq"))) ?? [];
   const previousAll = (await one("explanations", (b) => b.eq("experiment_id", exp.id).order("seq"))) ?? [];
   const symbols = [...new Set([...orders.map((o) => o.symbol), ...((snapshot?.holdings ?? []) as Row[]).map((h) => h.symbol)])];
   const instr = symbols.length ? ((await db.from("instruments").select("*").in("symbol", symbols)).data ?? []) : [];
@@ -141,6 +150,7 @@ export async function explainRun(args: { db: Db; exp: Experiment; runId: string;
     snapshot,
     benchmarkNames: args.benchmarkNames,
     previous: previousAll.slice(-6),
+    team,
     knownConcepts: [...new Set([...BASICS.map((b) => b.term), ...previousAll.flatMap((p) => ((p.concepts ?? []) as Row[]).map((c) => String(c.term)))])],
   });
   const schema = z.toJSONSchema(ExplanationSchema, { target: "draft-7" }) as Record<string, unknown>;
