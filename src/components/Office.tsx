@@ -29,6 +29,8 @@ interface Room {
   h: number;
   door: { x: number; side: "top" | "bottom" };
   grid?: { dx: number; dy: number; top?: number }; // mesas de relleno
+  floorName?: string; // nombre pintado en el suelo si es distinto (más corto)
+  labelAt?: "front" | "back"; // dónde se pinta el nombre (por defecto, delante, junto a la pared sur)
 }
 
 const ROOMS: Room[] = [
@@ -37,23 +39,23 @@ const ROOMS: Room[] = [
   { id: "riesgos", name: "CONTROL DE RIESGOS", x: 1320, y: 0, w: 480, h: 520, door: { x: 1560, side: "bottom" }, grid: { dx: 112, dy: 96, top: 170 } },
   { id: "despacho", name: "MESA DEL GESTOR", x: 1820, y: 0, w: 580, h: 520, door: { x: 2110, side: "bottom" } },
   { id: "trading", name: "SALA DE TRADING", x: 0, y: 640, w: 1000, h: 960, door: { x: 500, side: "top" }, grid: { dx: 112, dy: 92, top: 180 } },
-  { id: "reuniones", name: "SALA DE REUNIONES", x: 1020, y: 640, w: 480, h: 460, door: { x: 1260, side: "top" } },
+  { id: "reuniones", name: "SALA DE REUNIONES", x: 1020, y: 640, w: 480, h: 460, door: { x: 1260, side: "top" }, floorName: "REUNIONES" },
   { id: "descanso", name: "DESCANSO", x: 1020, y: 1120, w: 480, h: 480, door: { x: 1260, side: "top" } },
-  { id: "aula", name: "AULA", x: 1520, y: 640, w: 380, h: 460, door: { x: 1710, side: "top" }, grid: { dx: 100, dy: 84, top: 330 } },
-  { id: "academia", name: "ACADEMIA", x: 1920, y: 640, w: 480, h: 460, door: { x: 2160, side: "top" }, grid: { dx: 120, dy: 100, top: 340 } },
+  { id: "aula", name: "AULA", x: 1520, y: 640, w: 380, h: 460, door: { x: 1710, side: "top" }, grid: { dx: 100, dy: 84, top: 200 } },
+  { id: "academia", name: "ACADEMIA", x: 1920, y: 640, w: 480, h: 460, door: { x: 2160, side: "top" }, grid: { dx: 120, dy: 100, top: 220 } },
   { id: "pruebas", name: "MESA DE PRUEBAS", x: 1520, y: 1120, w: 480, h: 480, door: { x: 1760, side: "top" }, grid: { dx: 112, dy: 92 } },
   { id: "archivo", name: "ARCHIVO Y AUDITORÍA", x: 2020, y: 1120, w: 380, h: 480, door: { x: 2210, side: "top" } },
 ];
 
 /** Puesto de cada agente: mesa, sala, sitio en la reunión y segundos del ciclo en que asiste. */
 const POSTS: Record<string, { room: string; desk: Pt; seat: Pt | null; slot: [number, number] | null; bubble?: number }> = {
-  datos: { room: "datos", desk: { x: 280, y: 150 }, seat: { x: 1260, y: 790 }, slot: [0, 14], bubble: 1 },
-  motor: { room: "lab", desk: { x: 820, y: 150 }, seat: { x: 1165, y: 795 }, slot: [3, 34], bubble: 1 },
-  analista: { room: "lab", desk: { x: 1060, y: 150 }, seat: { x: 1355, y: 795 }, slot: [5, 34] },
-  riesgos: { room: "riesgos", desk: { x: 1560, y: 130 }, seat: { x: 1430, y: 890 }, slot: [7, 36], bubble: 1 },
-  gestor: { room: "despacho", desk: { x: 2110, y: 260 }, seat: { x: 1090, y: 890 }, slot: [1, 42] },
-  ejecucion: { room: "trading", desk: { x: 500, y: 760 }, seat: { x: 1190, y: 990 }, slot: [28, 44], bubble: 1 },
-  profesor: { room: "aula", desk: { x: 1710, y: 760 }, seat: { x: 1330, y: 990 }, slot: [33, 47] },
+  datos: { room: "datos", desk: { x: 280, y: 150 }, seat: { x: 1260, y: 700 }, slot: [0, 14], bubble: 1 },
+  motor: { room: "lab", desk: { x: 820, y: 150 }, seat: { x: 1165, y: 705 }, slot: [3, 34], bubble: 1 },
+  analista: { room: "lab", desk: { x: 1060, y: 150 }, seat: { x: 1355, y: 705 }, slot: [5, 34] },
+  riesgos: { room: "riesgos", desk: { x: 1560, y: 130 }, seat: { x: 1330, y: 900 }, slot: [7, 36], bubble: 1 },
+  gestor: { room: "despacho", desk: { x: 2110, y: 260 }, seat: { x: 1090, y: 800 }, slot: [1, 42] },
+  ejecucion: { room: "trading", desk: { x: 500, y: 760 }, seat: { x: 1190, y: 900 }, slot: [28, 44], bubble: 1 },
+  profesor: { room: "aula", desk: { x: 1710, y: 760 }, seat: { x: 1430, y: 800 }, slot: [33, 47] },
   academia: { room: "academia", desk: { x: 2160, y: 760 }, seat: null, slot: null },
   auditor: { room: "archivo", desk: { x: 2210, y: 1300 }, seat: null, slot: null },
 };
@@ -69,6 +71,37 @@ export interface OfficeAgent {
   hair: string;
   bubble: string | null;
   summary: string | null;
+}
+
+// ---------- Nombres de las salas pintados en el suelo ----------
+
+const SOUTH_WALL_SHADOW = 80; // la pared sur tapa en pantalla la franja de suelo que tiene detrás
+
+/** Líneas, tamaño y posición del nombre de una sala, y hasta dónde se pueden poner mesas. */
+function roomLabel(r: Room) {
+  const fit = (lines: string[]) => Math.min(70, (r.w - 60) / (Math.max(...lines.map((l) => l.length)) * 0.68));
+  const name = r.floorName ?? r.name;
+  let lines = [name];
+  const words = name.split(" ");
+  if (fit(lines) < 48 && words.length > 1) {
+    // partir en dos líneas lo más equilibradas posible
+    let best = lines;
+    let bestSize = 0;
+    for (let i = 1; i < words.length; i++) {
+      const cand = [words.slice(0, i).join(" "), words.slice(i).join(" ")];
+      if (fit(cand) > bestSize) {
+        bestSize = fit(cand);
+        best = cand;
+      }
+    }
+    lines = best;
+  }
+  const size = fit(lines);
+  const lead = size * 1.08;
+  const band = lines.length * lead;
+  const firstBaseline = r.labelAt === "back" ? r.y + 30 + size : r.y + r.h - SOUTH_WALL_SHADOW - (lines.length - 1) * lead;
+  const deskLimit = r.labelAt === "back" ? r.y + r.h - 60 : r.y + r.h - SOUTH_WALL_SHADOW - band - 40;
+  return { lines, size, lead, firstBaseline, deskLimit };
 }
 
 // ---------- Recorridos y animación ----------
@@ -253,7 +286,8 @@ function buildProps(): Prop[] {
   let n = 0;
   for (const r of ROOMS) {
     if (!r.grid) continue;
-    for (let y = r.y + (r.grid.top ?? 110); y < r.y + r.h - 60; y += r.grid.dy)
+    const limit = roomLabel(r).deskLimit; // deja libre la franja del nombre
+    for (let y = r.y + (r.grid.top ?? 110); y < limit; y += r.grid.dy)
       for (let x = r.x + 80; x < r.x + r.w - 60; x += r.grid.dx) {
         if (taken.some((t) => Math.abs(t.x - x) < 90 && Math.abs(t.y - y) < 80)) continue;
         n++;
@@ -265,17 +299,17 @@ function buildProps(): Prop[] {
   // servidores en la sala de datos
   for (let i = 0; i < 4; i++) add(60 + i * 70, 40, <IsoBox key={`srv-${i}`} x={40 + i * 70} y={30} w={50} d={60} h={110} top="#1a1c21" left="#0f1013" right="#16181c" stroke={NEON} />);
   // mesa de reuniones
-  add(1260, 890, <IsoBox key="mesa" x={1130} y={830} w={260} d={120} h={24} top="#6b4f3a" left="#3d2b1f" right="#4f3828" stroke={NEON} />);
+  add(1260, 800, <IsoBox key="mesa" x={1130} y={740} w={260} d={120} h={24} top="#6b4f3a" left="#3d2b1f" right="#4f3828" stroke={NEON} />);
   // despacho: mesa grande y sofá
-  add(2200, 420, <IsoBox key="sofa" x={2240} y={400} w={120} d={60} h={26} top="#3a2a20" left="#22180f" right="#2c2016" />);
+  add(2300, 90, <IsoBox key="sofa" x={2240} y={60} w={120} d={60} h={26} top="#3a2a20" left="#22180f" right="#2c2016" />);
   // descanso: sofás, cafetera y mesa
   add(1120, 1300, <IsoBox key="sofa2" x={1080} y={1260} w={150} d={60} h={26} top="#2f3a52" left="#1c2333" right="#252e42" />);
-  add(1340, 1460, <IsoBox key="sofa3" x={1300} y={1420} w={150} d={60} h={26} top="#2f3a52" left="#1c2333" right="#252e42" />);
+  add(1340, 1360, <IsoBox key="sofa3" x={1300} y={1330} w={150} d={60} h={26} top="#2f3a52" left="#1c2333" right="#252e42" />);
   add(1430, 1170, <IsoBox key="cafe" x={1420} y={1150} w={50} d={40} h={60} top="#d0d0d0" left="#7d7f86" right="#9a9ca3" />);
   // academia y archivo
   for (let i = 0; i < 4; i++) add(1960 + i * 110, 670, <IsoBox key={`lib-${i}`} x={1950 + i * 110} y={660} w={90} d={30} h={80} top="#5a4030" left="#3b2a1f" right="#4a3426" />);
   for (let i = 0; i < 3; i++) add(2060 + i * 90, 1160, <IsoBox key={`arc-${i}`} x={2050 + i * 90} y={1150} w={70} d={45} h={70} top="#8b9098" left="#5b5f6a" right="#6f737d" />);
-  add(2360, 1560, <IsoBox key="safe" x={2320} y={1520} w={60} d={60} h={60} top="#3a3d44" left="#1f2126" right="#2a2d33" stroke={NEON} />);
+  add(2360, 1290, <IsoBox key="safe" x={2320} y={1260} w={60} d={60} h={60} top="#3a3d44" left="#1f2126" right="#2a2d33" stroke={NEON} />);
   // aula: pizarra
   add(1600, 660, <IsoBox key="pizarra" x={1560} y={650} w={300} d={14} h={80} top="#20402c" left="#1b3524" right="#183020" />);
   // plantas
@@ -293,7 +327,6 @@ function buildProps(): Prop[] {
   add(300, 690, <WallScreen key="sc-trading2" x={250} y={700} w={180} kind="bars" />);
   add(940, 2, <WallScreen key="sc-lab" x={940} y={10} w={200} kind="fan" />);
   add(1560, 2, <WallScreen key="sc-risk" x={1560} y={10} w={200} kind="alerts" />);
-  add(1760, 1122, <WallScreen key="sc-test" x={1760} y={1130} w={200} kind="bars" />);
   return out.sort((a, b) => a.depth - b.depth);
 }
 
@@ -439,14 +472,18 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
           ))}
           <g transform={ISO}>
             {ROOMS.map((r) => {
-              const size = Math.min(84, (r.w * 1.55) / r.name.length);
+              const l = roomLabel(r);
               return (
-                <text key={`t-${r.id}`} x={r.x + 30} y={r.y + r.h * 0.5 + size / 3} fontSize={size} fontWeight="900" fill="rgba(20,22,26,.2)" letterSpacing="2">
-                  {r.name}
+                <text key={`t-${r.id}`} fontSize={l.size} fontWeight="900" fill="rgba(20,22,26,.34)" letterSpacing="1">
+                  {l.lines.map((line, i) => (
+                    <tspan key={i} x={r.x + 30} y={l.firstBaseline + i * l.lead}>
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
               );
             })}
-            <text x={60} y={CORRIDOR_Y + 14} fontSize="34" fontWeight="800" fill="rgba(20,22,26,.18)">
+            <text x={1620} y={CORRIDOR_Y + 14} fontSize="34" fontWeight="800" fill="rgba(20,22,26,.3)">
               PASILLO
             </text>
             {/* líneas de neón en el suelo del pasillo */}
