@@ -31,7 +31,7 @@ Reglas:
 2. Evalúa el PROCESO (¿se siguieron las tesis, los límites, el manual?, ¿se operó de más o de menos?, ¿se cumplió el mandato de diversificación global?) y el RESULTADO frente a los benchmarks.
 3. Escribe lecciones concretas con evidencia (cifras del mensaje).
 4. Reescribe el MANUAL DE ESTRATEGIA completo (no solo los cambios): reglas claras y operativas sobre selección, tamaño de posiciones, horizontes (estratégico y táctico), cuándo salir, uso del efectivo, riesgo y costes. Mantén lo que funciona; cambia lo que los datos desaconsejan. Máximo 3000 caracteres.
-5. El manual no puede contradecir las reglas duras del sistema (máx. 25 % por activo, solo contado, unidades enteras, solo EUR/USD) ni el mandato del propietario (buscar acciones de todo el mundo, no solo índices de EE. UU. y Europa).
+5. El manual no puede contradecir las reglas duras del sistema (máx. 25 % por activo, solo contado, unidades enteras, solo EUR/USD) ni el mandato del propietario (buscar acciones de todo el mundo, no solo índices de EE. UU. y Europa). Decisión del propietario: NO hay límite al número de operaciones por día ni por semana: no pongas topes de operaciones en el manual; controla los costes con tamaños mínimos y exigiendo una razón para cada operación.
 6. Escribe en español y responde solo con el JSON del esquema.`;
 
 /** Semana ISO (p. ej. 2026-W43) de una fecha YYYY-MM-DD. */

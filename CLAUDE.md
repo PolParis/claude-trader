@@ -93,6 +93,8 @@ Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del pr
   CLOSE (`npm run academy`, `agent/lib/agent/academy.ts`): post-mortem + MANUAL DE ESTRATEGIA que lee el
   gestor. Todo en la tabla encadenada `agent_reports`. Web: `/oficina` (animación SVG) y `/cuantitativo`.
   Consumo: ~25 k tokens la decisión + ~10 k cada analista; prompt del gestor ~40 k caracteres.
+- Decisión del usuario (2026-10-23): sin límite de operaciones por día/semana. Va en el system prompt del
+  gestor, la academia y la gestora de riesgos (prevalece sobre el manual v1, que tenía "máx. 3-4 por semana").
 - Web: https://claude-trader-livid.vercel.app (despliegue automático al hacer push a main).
 - Rama principal `main`. Repo público (GitHub Actions gratis + transparencia).
 - `cacheComponents` desactivado en `next.config.ts`: la web es privada y dinámica (sesión en cada petición).
