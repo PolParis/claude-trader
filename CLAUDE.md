@@ -105,6 +105,8 @@ Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del pr
 - Claude se llama con `--tools "" --strict-mcp-config --safe-mode --no-session-persistence --json-schema`
   desde una carpeta temporal vacía. Un único reintento solo si el JSON es inválido y antes de escribir nada.
 - Ejecución: precios refrescados justo antes de ejecutar (no los del prompt).
+- `run-agent.ps1` espera hasta 2 min a tener red (DNS) al despertar: el 23/10 la P0 falló con "fetch failed"
+  porque el Wi-Fi aún no había conectado tras la suspensión.
 - Franjas programadas con ventana (S1 16:25–18:00, S2 20:55–22:00): si Windows lanza la tarea tarde
   (PC dormido en batería, sin temporizadores de activación) no hace nada y el cierre la marca fallida.
 - Cierre diario: GitHub puede lanzar el cron con horas de retraso → antes de las 09:00 de Madrid se cierra

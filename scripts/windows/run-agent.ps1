@@ -15,6 +15,11 @@ $ES_SYSTEM_REQUIRED = [uint32]"0x00000001"
 [void][Win32.Power]::SetThreadExecutionState($ES_CONTINUOUS -bor $ES_SYSTEM_REQUIRED)
 
 try {
+  # Al despertar de la suspension el Wi-Fi tarda unos segundos en conectarse: esperamos (max. 2 min)
+  # a tener internet antes de empezar. Si no llega, el agente fallara sin reservar la franja.
+  for ($i = 0; $i -lt 24; $i++) {
+    try { [void][System.Net.Dns]::GetHostAddresses("query1.finance.yahoo.com"); break } catch { Start-Sleep -Seconds 5 }
+  }
   $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
   Set-Location $repo
   New-Item -ItemType Directory -Force -Path "agent\logs" | Out-Null
