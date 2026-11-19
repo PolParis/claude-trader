@@ -337,24 +337,28 @@ function Hanukiah({ x, y, z, lit }: { x: number; y: number; z: number; lit: numb
   );
 }
 
-/** Bandera grande con la estrella de David (blanco y azul) colgada en la pared. */
-function StarBanner({ x, y }: { x: number; y: number }) {
-  const [X, Y] = P(x, y, 180);
+/** Bandera con la estrella de David tendida sobre el tablero de una mesa (plana, en perspectiva). */
+function TableFlag({ x, y, w, d, z }: { x: number; y: number; w: number; d: number; z: number }) {
   const blue = "#0038b8";
-  const tri = (r: number, up: boolean) => {
-    const a = up ? -90 : 90;
-    return [0, 120, 240].map((d) => `${(r * Math.cos(((a + d) * Math.PI) / 180)).toFixed(1)},${(r * Math.sin(((a + d) * Math.PI) / 180)).toFixed(1)}`).join(" ");
-  };
+  const cx = x + w / 2;
+  const cy = y + d / 2;
+  const r = d * 0.3;
+  const tri = (up: boolean) =>
+    [0, 120, 240]
+      .map((deg) => {
+        const a = (((up ? -90 : 90) + deg) * Math.PI) / 180;
+        return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+      })
+      .join(" ");
   return (
-    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)})`} pointerEvents="none">
+    <g transform={`translate(0,${-z}) ${ISO}`} pointerEvents="none">
       <title>Estrella de David</title>
-      <line x1="-120" y1="-84" x2="120" y2="-84" stroke="#8b9098" strokeWidth="3" />
-      <rect x="-110" y="-80" width="220" height="160" fill="#fff" stroke="#c9c9c2" strokeWidth="1" />
-      <rect x="-110" y="-64" width="220" height="22" fill={blue} />
-      <rect x="-110" y="42" width="220" height="22" fill={blue} />
-      <g transform="translate(0,0)" fill="none" stroke={blue} strokeWidth="6" strokeLinejoin="miter">
-        <polygon points={tri(32, true)} />
-        <polygon points={tri(32, false)} />
+      <rect x={x} y={y} width={w} height={d} fill="#fff" />
+      <rect x={x} y={y + d * 0.1} width={w} height={d * 0.15} fill={blue} />
+      <rect x={x} y={y + d * 0.75} width={w} height={d * 0.15} fill={blue} />
+      <g fill="none" stroke={blue} strokeWidth={d * 0.045} strokeLinejoin="miter">
+        <polygon points={tri(true)} />
+        <polygon points={tri(false)} />
       </g>
     </g>
   );
@@ -412,7 +416,14 @@ function buildProps(): Prop[] {
   // servidores en la sala de datos
   for (let i = 0; i < 4; i++) add(60 + i * 70, 40, <IsoBox key={`srv-${i}`} x={40 + i * 70} y={30} w={50} d={60} h={110} top="#1a1c21" left="#0f1013" right="#16181c" stroke={NEON} />);
   // mesa de reuniones
-  add(1260, 800, <IsoBox key="mesa" x={1130} y={740} w={260} d={120} h={24} top="#6b4f3a" left="#3d2b1f" right="#4f3828" stroke={NEON} />);
+  add(
+    1260,
+    800,
+    <g key="mesa">
+      <IsoBox x={1130} y={740} w={260} d={120} h={24} top="#6b4f3a" left="#3d2b1f" right="#4f3828" stroke={NEON} />
+      <TableFlag x={1150} y={752} w={220} d={96} z={24} />
+    </g>,
+  );
   // despacho: mesa grande y sofá
   add(1920, 60, <IsoBox key="aparador" x={1880} y={30} w={80} d={40} h={40} top="#5a4030" left="#3b2a1f" right="#4a3426" />);
   add(2300, 90, <IsoBox key="sofa" x={2240} y={60} w={120} d={60} h={26} top="#3a2a20" left="#22180f" right="#2c2016" />);
@@ -617,7 +628,6 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
             <Mezuzah key={`mz-${r.id}`} x={r.door.x + 49} y={r.door.side === "bottom" ? r.y + r.h : r.y} />
           ))}
           <HebrewCalendar x={2250} y={10} date={today?.he ?? null} />
-          <StarBanner x={1990} y={10} />
 
           {/* mobiliario ordenado por profundidad */}
           {props.map((p) => p.node)}
