@@ -57,15 +57,15 @@ export default async function OficinaPage() {
       : `Aún no ha habido reuniones · primera: ${fmtLong(nextScheduledRun(now).at)}`;
 
   const agents: OfficeAgent[] = [
-    { id: "datos", name: "Recolectora", role: "Código", ai: false, hair: "#2b2b2b", bubble: "Datos de 160 activos listos", summary: lastRun ? "Ha traído precios, histórico y titulares para la última reunión." : null },
-    { id: "motor", name: "Motor cuant", role: "Código", ai: false, hair: "#7a4b2a", bubble: qe?.risk ? `Volatilidad ${fmtPct(qe.risk.annVol, false, 0)}, VaR ${fmtPct(qe.risk.var95_1d, false, 1)}` : "Calculando riesgos", summary: rep.get("quant_engine")?.summary ?? null },
-    { id: "analista", name: "Analista cuant", role: "IA (Claude)", ai: true, hair: "#d9a441", bubble: qa?.ideas?.[0] ? short(`Idea: ${qa.ideas[0].action} ${qa.ideas[0].symbol}`) : "Buscando oportunidades", summary: qa?.summary ?? null },
-    { id: "riesgos", name: "Gestora de riesgos", role: "IA (Claude)", ai: true, hair: "#5a2d1a", bubble: rm ? `Riesgo ${rm.risk_level}` : "Revisando límites", summary: rm ? `Riesgo ${rm.risk_level}. ${rm.summary}` : null },
-    { id: "gestor", name: "Gestor de cartera", role: "IA (Claude)", ai: true, hair: "#1f1f1f", bubble: orders.length ? `${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}. ¡Adelante!` : decision ? "Hoy no opero" : "Escuchando al equipo", summary: decision?.summary ?? null },
-    { id: "ejecucion", name: "Mesa de ejecución", role: "Código", ai: false, hair: "#9b9b9b", bubble: orders.length ? `${filled} ejecutadas, ${rejected} rechazadas` : "Nada que ejecutar", summary: lastRun ? (orders.length ? `${orders.length} órdenes: ${filled} ejecutadas, ${rejected} rechazadas.` : "No hubo órdenes que ejecutar.") : null },
-    { id: "profesor", name: "Profesor", role: "IA (Claude)", ai: true, hair: "#c0c0c0", bubble: "Te lo explico en sencillo", summary: expl?.headline ?? null },
-    { id: "academia", name: "Academia", role: "IA (Claude)", ai: true, hair: "#8c2f39", bubble: null, summary: ac ? `Semana ${ac.period} · nota ${ac.content.grade}. ${ac.summary}` : "Hará su primera revisión el viernes por la noche." },
-    { id: "auditor", name: "Auditor", role: "Código", ai: false, hair: "#3d5a80", bubble: null, summary: lastClose ? `Último cierre del día: ${lastClose.run_date}.` : null },
+    { id: "datos", name: "Recolectora", role: "Código", ai: false, hair: "#2b2b2b", look: "patillas-copa", bubble: "Datos de 160 activos listos", summary: lastRun ? "Ha traído precios, histórico y titulares para la última reunión." : null },
+    { id: "motor", name: "Motor cuant", role: "Código", ai: false, hair: "#4a3020", look: "copa", bubble: qe?.risk ? `Volatilidad ${fmtPct(qe.risk.annVol, false, 0)}, VaR ${fmtPct(qe.risk.var95_1d, false, 1)}` : "Calculando riesgos", summary: rep.get("quant_engine")?.summary ?? null },
+    { id: "analista", name: "Analista cuant", role: "IA (Claude)", ai: true, hair: "#3a2a1e", look: "sombrerito", bubble: qa?.ideas?.[0] ? short(`Idea: ${qa.ideas[0].action} ${qa.ideas[0].symbol}`) : "Buscando oportunidades", summary: qa?.summary ?? null },
+    { id: "riesgos", name: "Gestora de riesgos", role: "IA (Claude)", ai: true, hair: "#1f1f1f", look: "copa", bubble: rm ? `Riesgo ${rm.risk_level}` : "Revisando límites", summary: rm ? `Riesgo ${rm.risk_level}. ${rm.summary}` : null },
+    { id: "gestor", name: "Gestor de cartera", role: "IA (Claude)", ai: true, hair: "#1f1f1f", look: "patillas-copa", bubble: orders.length ? `${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}. ¡Adelante!` : decision ? "Hoy no opero" : "Escuchando al equipo", summary: decision?.summary ?? null },
+    { id: "ejecucion", name: "Mesa de ejecución", role: "Código", ai: false, hair: "#2b2b2b", look: "sombrerito", bubble: orders.length ? `${filled} ejecutadas, ${rejected} rechazadas` : "Nada que ejecutar", summary: lastRun ? (orders.length ? `${orders.length} órdenes: ${filled} ejecutadas, ${rejected} rechazadas.` : "No hubo órdenes que ejecutar.") : null },
+    { id: "profesor", name: "Profesor", role: "IA (Claude)", ai: true, hair: "#3a2a1e", look: "copa", bubble: "Te lo explico en sencillo", summary: expl?.headline ?? null },
+    { id: "academia", name: "Academia", role: "IA (Claude)", ai: true, hair: "#4a3020", look: "patillas-copa", bubble: null, summary: ac ? `Semana ${ac.period} · nota ${ac.content.grade}. ${ac.summary}` : "Hará su primera revisión el viernes por la noche." },
+    { id: "auditor", name: "Auditor", role: "Código", ai: false, hair: "#1f1f1f", look: "sombrerito", bubble: null, summary: lastClose ? `Último cierre del día: ${lastClose.run_date}.` : null },
   ];
 
   const cards: Card[] = [

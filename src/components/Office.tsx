@@ -69,6 +69,7 @@ export interface OfficeAgent {
   role: string;
   ai: boolean;
   hair: string;
+  look?: Look;
   bubble: string | null;
   summary: string | null;
 }
@@ -232,14 +233,46 @@ function WallScreen({ x, y, w, kind }: { x: number; y: number; w: number; kind: 
   );
 }
 
-function Person({ hair, ai }: { hair: string; ai: boolean }) {
+/** Aspecto especial de algunos agentes (el grupo de amigos del autor). */
+export type Look = "patillas-copa" | "sombrerito" | "copa";
+
+/** Sombrero de copa negro: ala ancha y copa alta con cinta. */
+function TopHat() {
+  return (
+    <g>
+      <rect x="-7.5" y="-62" width="15" height="16" rx="1.5" fill="#0a0a0c" />
+      <rect x="-7.5" y="-50" width="15" height="3" fill="#2a2a30" />
+      <ellipse cx="0" cy="-46" rx="13" ry="3.2" fill="#0a0a0c" />
+      <ellipse cx="0" cy="-61.5" rx="7.5" ry="1.6" fill="#1c1c22" />
+    </g>
+  );
+}
+
+function Person({ hair, ai, look }: { hair: string; ai: boolean; look?: Look }) {
   const glow = ai ? NEON : "#7fd7ff";
+  const dark = look === "patillas-copa" || look === "copa"; // visten de oscuro
   return (
     <g>
       <ellipse cx="0" cy="2" rx="16" ry="6" fill={glow} opacity=".35" className="office-glow" />
-      <rect x="-9" y="-30" width="18" height="30" rx="8" fill={ai ? "#9fc800" : "#5aa9cf"} />
+      <rect x="-9" y="-30" width="18" height="30" rx="8" fill={dark ? "#1a1b20" : ai ? "#9fc800" : "#5aa9cf"} />
+      {dark && (
+        <>
+          {/* camisa blanca en el cuello y botón con el color del tipo de agente */}
+          <path d="M-4,-30 L0,-23 L4,-30z" fill="#f3f3f3" />
+          <circle cx="0" cy="-17" r="1.6" fill={ai ? "#9fc800" : "#5aa9cf"} />
+        </>
+      )}
       <circle cx="0" cy="-38" r="9" fill="#f1c9a5" />
       <path d="M-9,-39 a9,9 0 0,1 18,0 q-4,-4 -9,-3 q-5,-1 -9,3z" fill={hair} />
+      {look === "patillas-copa" && (
+        <g stroke={hair} strokeWidth="2.6" fill="none" strokeLinecap="round">
+          {/* patillas largas a ambos lados de la cara */}
+          <path d="M-8.2,-40 Q-9.5,-34 -8,-30 q1.5,2 -0.5,4" />
+          <path d="M8.2,-40 Q9.5,-34 8,-30 q-1.5,2 0.5,4" />
+        </g>
+      )}
+      {(look === "patillas-copa" || look === "copa") && <TopHat />}
+      {look === "sombrerito" && <path d="M-6,-45.5 a6,4 0 0,1 12,0z" fill="#16213a" stroke="#0a0f1c" strokeWidth=".6" />}
     </g>
   );
 }
@@ -650,9 +683,9 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
               <g key={`p-${a.id}`}>
                 <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)})`} data-agent={a.id} style={{ cursor: "pointer" }}>
                   <g style={{ animation: p.slot ? `walk-${a.id} ${CYCLE_S}s linear infinite` : undefined }}>
-                    <rect x="-24" y="-56" width="48" height="66" fill="transparent" />
+                    <rect x="-24" y="-66" width="48" height="76" fill="transparent" />
                     <g style={{ animation: `office-type ${0.9 + (p.desk.x % 5) / 10}s ease-in-out infinite` }}>
-                      <Person hair={a.hair} ai={a.ai} />
+                      <Person hair={a.hair} ai={a.ai} look={a.look} />
                     </g>
                     {selected === a.id && <ellipse cx="0" cy="2" rx="30" ry="12" fill="none" stroke="#fff" strokeWidth="3" strokeDasharray="6 4" />}
                     {a.bubble && p.slot && (
