@@ -337,6 +337,29 @@ function Hanukiah({ x, y, z, lit }: { x: number; y: number; z: number; lit: numb
   );
 }
 
+/** Bandera grande con la estrella de David (blanco y azul) colgada en la pared. */
+function StarBanner({ x, y }: { x: number; y: number }) {
+  const [X, Y] = P(x, y, 180);
+  const blue = "#0038b8";
+  const tri = (r: number, up: boolean) => {
+    const a = up ? -90 : 90;
+    return [0, 120, 240].map((d) => `${(r * Math.cos(((a + d) * Math.PI) / 180)).toFixed(1)},${(r * Math.sin(((a + d) * Math.PI) / 180)).toFixed(1)}`).join(" ");
+  };
+  return (
+    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)})`} pointerEvents="none">
+      <title>Estrella de David</title>
+      <line x1="-120" y1="-84" x2="120" y2="-84" stroke="#8b9098" strokeWidth="3" />
+      <rect x="-110" y="-80" width="220" height="160" fill="#fff" stroke="#c9c9c2" strokeWidth="1" />
+      <rect x="-110" y="-64" width="220" height="22" fill={blue} />
+      <rect x="-110" y="42" width="220" height="22" fill={blue} />
+      <g transform="translate(0,0)" fill="none" stroke={blue} strokeWidth="6" strokeLinejoin="miter">
+        <polygon points={tri(32, true)} />
+        <polygon points={tri(32, false)} />
+      </g>
+    </g>
+  );
+}
+
 /** Calendario de pared con la fecha hebrea de hoy. */
 function HebrewCalendar({ x, y, date }: { x: number; y: number; date: { es: string; he: string } | null }) {
   const [X, Y] = P(x, y, 58);
@@ -594,6 +617,7 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
             <Mezuzah key={`mz-${r.id}`} x={r.door.x + 49} y={r.door.side === "bottom" ? r.y + r.h : r.y} />
           ))}
           <HebrewCalendar x={2250} y={10} date={today?.he ?? null} />
+          <StarBanner x={1990} y={10} />
 
           {/* mobiliario ordenado por profundidad */}
           {props.map((p) => p.node)}
