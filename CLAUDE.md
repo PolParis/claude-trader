@@ -39,7 +39,7 @@ Se trabaja desde 2 PCs → este archivo es la fuente de verdad del estado del pr
 ## Arquitectura
 - `src/core/` lógica pura y testeada (Vitest): calendario, comisiones, FX, motor, órdenes limitadas,
   cartera derivada del registro, benchmarks, métricas, hash canónico. La usan la web, el agente y el cierre.
-- `src/app/` dashboard Next.js (App Router) — solo LEE de Supabase con la clave publicable + login.
+- `src/app/` dashboard Next.js (App Router) — solo LEE de Supabase con la clave publicable (web pública, sin login).
 - `agent/` scripts locales (NO se despliegan, ver `.vercelignore`): `run-agent`, `close-day`,
   `start-experiment`, `create-user`. Datos de mercado en `agent/lib/market/` (interfaz `MarketDataProvider`).
 - `supabase/migrations/` SQL versionado (se aplica con el MCP de Supabase).

@@ -1,4 +1,3 @@
-import { logout } from "@/app/actions";
 import { ExperimentSelect } from "@/components/ExperimentSelect";
 import { Nav } from "@/components/Nav";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -16,9 +15,6 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="flex items-center gap-2">
           <ExperimentSelect options={experiments.map((e) => ({ code: e.code, name: e.name, mode: e.mode }))} current={exp?.code ?? ""} />
           <ThemeToggle />
-          <form action={logout}>
-            <button className="rounded-md border border-line px-2 py-1 text-xs text-ink-2 hover:bg-surface-2">Salir</button>
-          </form>
         </div>
       </header>
       <Nav />
