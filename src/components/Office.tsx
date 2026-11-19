@@ -40,7 +40,7 @@ const ROOMS: Room[] = [
   { id: "despacho", name: "MESA DEL GESTOR", x: 1820, y: 0, w: 580, h: 520, door: { x: 2110, side: "bottom" } },
   { id: "trading", name: "SALA DE TRADING", x: 0, y: 640, w: 1000, h: 960, door: { x: 500, side: "top" }, grid: { dx: 112, dy: 92, top: 180 } },
   { id: "reuniones", name: "SALA DE REUNIONES", x: 1020, y: 640, w: 480, h: 460, door: { x: 1260, side: "top" }, floorName: "REUNIONES" },
-  { id: "descanso", name: "DESCANSO", x: 1020, y: 1120, w: 480, h: 480, door: { x: 1260, side: "top" } },
+  { id: "sinagoga", name: "SINAGOGA", x: 1020, y: 1120, w: 480, h: 480, door: { x: 1260, side: "top" } },
   { id: "aula", name: "AULA", x: 1520, y: 640, w: 380, h: 460, door: { x: 1710, side: "top" }, grid: { dx: 100, dy: 84, top: 200 } },
   { id: "academia", name: "ACADEMIA", x: 1920, y: 640, w: 480, h: 460, door: { x: 2160, side: "top" }, grid: { dx: 120, dy: 100, top: 220 } },
   { id: "pruebas", name: "MESA DE PRUEBAS", x: 1520, y: 1120, w: 480, h: 480, door: { x: 1760, side: "top" }, grid: { dx: 112, dy: 92 } },
@@ -397,6 +397,29 @@ function TableFlag({ x, y, w, d, z }: { x: number; y: number; w: number; d: numb
   );
 }
 
+/** Tablas de la Ley (dos lápidas doradas) sobre la cortina del arca, en la cara este. */
+function TorahTablets({ x, y, z }: { x: number; y: number; z: number }) {
+  const [X, Y] = P(x, y, z);
+  return (
+    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)}) skewY(-30)`} pointerEvents="none">
+      <path d="M-11,6 v-10 a5,5 0 0,1 10,0 v10z M1,6 v-10 a5,5 0 0,1 10,0 v10z" fill="#e8c766" stroke="#8a6d1f" strokeWidth=".6" />
+    </g>
+  );
+}
+
+/** Ner tamid: lámpara roja que cuelga encendida delante del arca. */
+function NerTamid({ x, y, z }: { x: number; y: number; z: number }) {
+  const [X, Y] = P(x, y, z);
+  return (
+    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)})`} pointerEvents="none">
+      <title>Ner tamid</title>
+      <line x1="0" y1="-26" x2="0" y2="-5" stroke="#8a6d1f" strokeWidth="1" />
+      <path d="M-5,-5 h10 l-2,7 h-6z" fill="#c9a24a" />
+      <circle cx="0" cy="0" r="3" fill="#ff3b3b" className="office-glow" />
+    </g>
+  );
+}
+
 /** Calendario de pared con la fecha hebrea de hoy. */
 function HebrewCalendar({ x, y, date }: { x: number; y: number; date: { es: string; he: string } | null }) {
   const [X, Y] = P(x, y, 58);
@@ -460,10 +483,25 @@ function buildProps(): Prop[] {
   // despacho: mesa grande y sofá
   add(1920, 60, <IsoBox key="aparador" x={1880} y={30} w={80} d={40} h={40} top="#5a4030" left="#3b2a1f" right="#4a3426" />);
   add(2300, 90, <IsoBox key="sofa" x={2240} y={60} w={120} d={60} h={26} top="#3a2a20" left="#22180f" right="#2c2016" />);
-  // descanso: sofás, cafetera y mesa
-  add(1120, 1300, <IsoBox key="sofa2" x={1080} y={1260} w={150} d={60} h={26} top="#2f3a52" left="#1c2333" right="#252e42" />);
-  add(1340, 1360, <IsoBox key="sofa3" x={1300} y={1330} w={150} d={60} h={26} top="#2f3a52" left="#1c2333" right="#252e42" />);
-  add(1430, 1170, <IsoBox key="cafe" x={1420} y={1150} w={50} d={40} h={60} top="#d0d0d0" left="#7d7f86" right="#9a9ca3" />);
+  // sinagoga: Arón Hakodesh (arca de la Torá) en la pared oeste, ner tamid, bimá en el centro y bancos mirando al arca
+  add(
+    1050,
+    1360,
+    <g key="aron">
+      <IsoBox x={1030} y={1290} w={45} d={140} h={100} top="#7a5634" left="#4a321d" right="#5e4127" stroke="#c9a24a" />
+      <polygon points={pts([P(1076, 1305, 12), P(1076, 1415, 12), P(1076, 1415, 86), P(1076, 1305, 86)])} fill="#6b1d2e" stroke="#c9a24a" strokeWidth="2" />
+      <polyline points={pts([P(1076, 1360, 12), P(1076, 1360, 86)])} stroke="#c9a24a" strokeWidth="1.5" />
+      <TorahTablets x={1076} y={1360} z={70} />
+      <NerTamid x={1090} y={1360} z={128} />
+    </g>,
+  );
+  add(1255, 1355, <IsoBox key="bima" x={1180} y={1310} w={120} d={90} h={14} top="#8a6440" left="#4a321d" right="#5e4127" stroke="#c9a24a" />);
+  add(1260, 1360, <IsoBox key="atril" x={1220} y={1340} w={40} d={30} h={26} z={14} top="#6b4f3a" left="#3d2b1f" right="#4f3828" />);
+  [1350, 1430].forEach((bx, i) =>
+    [1170, 1280, 1390].forEach((by, j) =>
+      add(bx + 13, by + 45, <IsoBox key={`banco-${i}-${j}`} x={bx} y={by} w={26} d={90} h={14} top="#6b4f3a" left="#3d2b1f" right="#4f3828" />),
+    ),
+  );
   // academia y archivo
   for (let i = 0; i < 4; i++) add(1960 + i * 110, 670, <IsoBox key={`lib-${i}`} x={1950 + i * 110} y={660} w={90} d={30} h={80} top="#5a4030" left="#3b2a1f" right="#4a3426" />);
   for (let i = 0; i < 3; i++) add(2060 + i * 90, 1160, <IsoBox key={`arc-${i}`} x={2050 + i * 90} y={1150} w={70} d={45} h={70} top="#8b9098" left="#5b5f6a" right="#6f737d" />);
@@ -628,7 +666,7 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
 
           {/* suelos y nombres pintados en el suelo */}
           {ROOMS.map((r) => (
-            <polygon key={`f-${r.id}`} points={floor(r.x, r.y, r.w, r.h)} fill={r.id === "reuniones" || r.id === "descanso" ? "#dcd6cb" : "#e4e4df"} />
+            <polygon key={`f-${r.id}`} points={floor(r.x, r.y, r.w, r.h)} fill={r.id === "reuniones" || r.id === "sinagoga" ? "#e6dcc6" : "#e4e4df"} />
           ))}
           <g transform={ISO}>
             {ROOMS.map((r) => {
