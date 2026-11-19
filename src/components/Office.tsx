@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 // ---------------------------------------------------------------------------------------------
 // Oficina isométrica. El plano se define en coordenadas de planta (x, y en "cm", 2400 × 1600) y se
@@ -267,6 +267,96 @@ function walls(r: Room): ReactNode[] {
   ));
 }
 
+// ---------- Detalles judíos: mezuzá, janukiá, calendario hebreo y cartel de Shalom ----------
+
+const DAY_MS = 86_400_000;
+
+/** Fecha hebrea en español y en hebreo, p. ej. "28 de jeshván de 5787" / "28 בחשוון 5787". */
+function hebrewDate(d: Date) {
+  const f = (l: string) => new Intl.DateTimeFormat(`${l}-u-ca-hebrew`, { day: "numeric", month: "long", year: "numeric" }).format(d).replace(/\s*AM$/, "");
+  return { es: f("es"), he: f("he") };
+}
+
+/** Velas de Janucá encendidas esta noche (0 fuera de Janucá). La 1.ª vela se enciende la noche del 24 de kislev. */
+function hanukkahCandles(d: Date): number {
+  for (let k = 0; k < 8; k++) {
+    const parts = new Intl.DateTimeFormat("en-u-ca-hebrew", { day: "numeric", month: "long" }).formatToParts(new Date(d.getTime() - k * DAY_MS));
+    const day = Number(parts.find((p) => p.type === "day")?.value);
+    const month = parts.find((p) => p.type === "month")?.value;
+    if (month === "Kislev" && day === 24) return k + 1;
+  }
+  return 0;
+}
+
+type Today = { he: { es: string; he: string }; candles: number };
+let todayCache: Today | null = null;
+const noSubscribe = () => () => {};
+function clientToday(): Today {
+  if (!todayCache) {
+    const d = new Date();
+    todayCache = { he: hebrewDate(d), candles: hanukkahCandles(d) };
+  }
+  return todayCache;
+}
+
+/** Mezuzá en el marco derecho de una puerta (caja inclinada con la letra shin). */
+function Mezuzah({ x, y }: { x: number; y: number }) {
+  const [X, Y] = P(x, y, 24);
+  return (
+    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)}) rotate(-20)`} pointerEvents="none">
+      <rect x="-3.5" y="-9" width="7" height="18" rx="2" fill="#c9a24a" stroke="#6b5420" strokeWidth=".8" />
+      <text y="3" textAnchor="middle" fontSize="7" fontWeight="700" fill="#3b2d0f">
+        ש
+      </text>
+    </g>
+  );
+}
+
+/** Janukiá (8 brazos + shamash) sobre un mueble; en Janucá se encienden las velas de esa noche. */
+function Hanukiah({ x, y, z, lit }: { x: number; y: number; z: number; lit: number }) {
+  const [X, Y] = P(x, y, z);
+  const arms = Array.from({ length: 9 }, (_, i) => i); // 4 = shamash (en el centro, más alto)
+  const ax = (i: number) => (i - 4) * 7;
+  const top = (i: number) => (i === 4 ? -40 : -32);
+  // las velas se encienden de izquierda a derecha según la noche (la más nueva, a la izquierda)
+  const isLit = (i: number) => i === 4 ? lit > 0 : (i < 4 ? 8 - i : 9 - i) <= lit;
+  return (
+    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)})`} pointerEvents="none">
+      <title>{lit ? `Janukiá: noche ${lit} de Janucá` : "Janukiá"}</title>
+      <rect x="-12" y="-4" width="24" height="4" rx="1.5" fill="#c9a24a" />
+      <rect x="-1.5" y="-22" width="3" height="18" fill="#c9a24a" />
+      <path d="M-28,-22 Q0,-14 28,-22" stroke="#c9a24a" strokeWidth="2.5" fill="none" />
+      {arms.map((i) => (
+        <g key={i}>
+          <line x1={ax(i)} y1={i === 4 ? -22 : -21 + Math.abs(i - 4) * 0.4} x2={ax(i)} y2={top(i) + 6} stroke="#c9a24a" strokeWidth="2" />
+          <rect x={ax(i) - 1.5} y={top(i)} width="3" height="6" fill="#f3f0e6" />
+          {isLit(i) && <ellipse cx={ax(i)} cy={top(i) - 3} rx="2" ry="3.5" fill="#ffb02e" className="office-glow" />}
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/** Calendario de pared con la fecha hebrea de hoy. */
+function HebrewCalendar({ x, y, date }: { x: number; y: number; date: { es: string; he: string } | null }) {
+  const [X, Y] = P(x, y, 58);
+  return (
+    <g transform={`translate(${X.toFixed(1)},${Y.toFixed(1)})`} pointerEvents="none">
+      <rect x="-70" y="-36" width="140" height="58" rx="3" fill="#f3f0e6" stroke="#c9a24a" strokeWidth="1.5" />
+      <rect x="-70" y="-36" width="140" height="14" rx="3" fill="#2b4c8c" />
+      <text y="-25.5" textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">
+        לוח עברי
+      </text>
+      <text y="-5" textAnchor="middle" fontSize="15" fontWeight="700" fill="#1a1c21" direction="rtl">
+        {date?.he ?? ""}
+      </text>
+      <text y="13" textAnchor="middle" fontSize="11" fill="#4a4e57">
+        {date?.es ?? ""}
+      </text>
+    </g>
+  );
+}
+
 // ---------- Escena estática (se calcula una vez) ----------
 
 const hash = (n: number) => {
@@ -301,6 +391,7 @@ function buildProps(): Prop[] {
   // mesa de reuniones
   add(1260, 800, <IsoBox key="mesa" x={1130} y={740} w={260} d={120} h={24} top="#6b4f3a" left="#3d2b1f" right="#4f3828" stroke={NEON} />);
   // despacho: mesa grande y sofá
+  add(1920, 60, <IsoBox key="aparador" x={1880} y={30} w={80} d={40} h={40} top="#5a4030" left="#3b2a1f" right="#4a3426" />);
   add(2300, 90, <IsoBox key="sofa" x={2240} y={60} w={120} d={60} h={26} top="#3a2a20" left="#22180f" right="#2c2016" />);
   // descanso: sofás, cafetera y mesa
   add(1120, 1300, <IsoBox key="sofa2" x={1080} y={1260} w={150} d={60} h={26} top="#2f3a52" left="#1c2333" right="#252e42" />);
@@ -356,6 +447,8 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
   const props = useMemo(() => buildProps(), []);
+  // la fecha se calcula solo en el navegador (en el servidor no hay fecha local del visitante)
+  const today = useSyncExternalStore(noSubscribe, clientToday, () => null);
 
   const toWorld = useCallback((clientX: number, clientY: number, v: View) => {
     const r = svgRef.current!.getBoundingClientRect();
@@ -486,6 +579,9 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
             <text x={1620} y={CORRIDOR_Y + 14} fontSize="34" fontWeight="800" fill="rgba(20,22,26,.3)">
               PASILLO
             </text>
+            <text x={60} y={CORRIDOR_Y + 14} fontSize="34" fontWeight="800" fill="rgba(43,76,140,.55)">
+              SHALOM · שלום
+            </text>
             {/* líneas de neón en el suelo del pasillo */}
             {Array.from({ length: 22 }, (_, i) => (
               <rect key={i} x={40 + i * 108} y={CORRIDOR_Y - 3} width="54" height="6" rx="3" fill={NEON} opacity=".55" />
@@ -494,9 +590,14 @@ export function Office({ agents, live, caption }: { agents: OfficeAgent[]; live:
 
           {/* paredes del fondo (norte y oeste) antes que los objetos */}
           {ROOMS.flatMap((r) => walls(r))}
+          {ROOMS.map((r) => (
+            <Mezuzah key={`mz-${r.id}`} x={r.door.x + 49} y={r.door.side === "bottom" ? r.y + r.h : r.y} />
+          ))}
+          <HebrewCalendar x={2250} y={10} date={today?.he ?? null} />
 
           {/* mobiliario ordenado por profundidad */}
           {props.map((p) => p.node)}
+          <Hanukiah x={1920} y={50} z={40} lit={today?.candles ?? 0} />
 
           {/* mesas de los agentes */}
           {agents.map((a, i) => {
