@@ -264,7 +264,7 @@ function Person({ hair, ai, look }: { hair: string; ai: boolean; look?: Look }) 
       )}
       <circle cx="0" cy="-38" r="9" fill="#f1c9a5" />
       <path d="M-9,-39 a9,9 0 0,1 18,0 q-4,-4 -9,-3 q-5,-1 -9,3z" fill={hair} />
-      {look === "patillas-copa" && (
+      {look && (
         <g stroke={hair} strokeWidth="2.6" fill="none" strokeLinecap="round">
           {/* patillas largas a ambos lados de la cara */}
           <path d="M-8.2,-40 Q-9.5,-34 -8,-30 q1.5,2 -0.5,4" />
@@ -272,7 +272,7 @@ function Person({ hair, ai, look }: { hair: string; ai: boolean; look?: Look }) 
         </g>
       )}
       {(look === "patillas-copa" || look === "copa") && <TopHat />}
-      {look === "sombrerito" && <path d="M-6,-45.5 a6,4 0 0,1 12,0z" fill="#16213a" stroke="#0a0f1c" strokeWidth=".6" />}
+      {look === "sombrerito" && <path d="M-6,-45.5 a6,4 0 0,1 12,0z" fill="#f5f5f2" stroke="#8a8a8a" strokeWidth=".6" />}
     </g>
   );
 }
